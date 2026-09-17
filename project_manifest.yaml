@@ -1,1 +1,43 @@
+project:
+  group_id: "Gxxx"
+  title: "Campus Room Booking with No-show Prediction"
+  problem_statement: "Manage room bookings and explore no-show prediction using synthetic data."
+  cloud_provider: "AWS"
+  repository_commit: ""
 
+team:
+  members:
+    - name: "TBD"
+      student_id: "TBD"
+      role: "TBD"
+
+architecture:
+  diagram: "evidence/architecture.png"
+  service_model: "TBD"
+  deployment_model: "TBD"
+  components: []
+
+evidence:
+  functional_test: "evidence/test-functional.md"
+  security_test: "evidence/test-security.md"
+  data_ai_test: "evidence/test-data-ai.md"
+  scale_resilience_test: "evidence/test-resilience.md"
+  monitoring: "evidence/monitoring.md"
+
+data_ai:
+  dataset: "data/README.md"
+  method: "TBD"
+  evaluation: "TBD"
+  reproducible_command: "TBD"
+
+security:
+  threat_control_map: "evidence/threat-control-map.md"
+  secrets_handling: "TBD"
+
+run:
+  prerequisites: []
+  commands: []
+
+declarations:
+  ai_use: "AI_USE_DECLARATION.md"
+  contributions: "TEAM_CONTRIBUTIONS.md"

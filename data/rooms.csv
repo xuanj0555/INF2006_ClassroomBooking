@@ -1,6 +1,0 @@
-room_id,name,capacity,is_active
-R001,Study Room A,4,true
-R002,Study Room B,6,true
-R003,Study Room C,8,true
-R004,Study Room D,4,true
-R005,Study Room E,6,false

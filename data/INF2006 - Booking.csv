@@ -1,0 +1,1 @@
+BookingID (Primary Key),StudentID/StaffID,Start Date & Time,End Date & Time,Duration,Student/Staff Email,RoomID

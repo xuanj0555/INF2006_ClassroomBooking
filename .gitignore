@@ -1,0 +1,18 @@
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# JavaScript dependencies and build output
+node_modules/
+dist/
+
+# Python environment and generated files
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Operating system files
+.DS_Store
+Thumbs.db

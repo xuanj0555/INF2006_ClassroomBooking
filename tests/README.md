@@ -65,14 +65,11 @@ Faculty membership does not automatically grant administrator permissions.
 Full rules are documented in
 [src/booking_rules.md](src/booking_rules.md).
 
-These are the intended rules. Some still require implementation.
+These are the intended rules.
 
 ## 5. Architecture
 
 [View the architecture diagram](evidence/architecture.png)
-
-The architecture diagram must reflect the current project scope
-and be updated as implementation progresses.
 
 ### Proposed Booking Flow
 

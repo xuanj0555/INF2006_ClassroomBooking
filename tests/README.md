@@ -21,6 +21,7 @@ availability and scheduling decisions.
 | Stanberley Su | 2501376@sit.singaporetech.edu.sg 
 | Sharlene Teo | 2503489@sit.singaporetech.edu.sg
 | Shermaine Chan | 2501469@sit.singaporetech.edu.sg
+
 Detailed contributions are recorded in
 [TEAM_CONTRIBUTIONS.md](TEAM_CONTRIBUTIONS.md).
 

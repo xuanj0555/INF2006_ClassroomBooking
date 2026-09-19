@@ -16,7 +16,7 @@ availability and scheduling decisions.
 ## 2. Team Members
 
 | Name | Student ID
-|------|------------|------------------|
+|------|------------
 | Wei YuChen | 2503041@sit.singaporetech.edu.sg
 | Stanberley Su | 2501376@sit.singaporetech.edu.sg 
 | Sharlene Teo | 2503489@sit.singaporetech.edu.sg

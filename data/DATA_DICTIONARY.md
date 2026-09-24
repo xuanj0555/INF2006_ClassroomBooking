@@ -107,14 +107,14 @@ Inspected file:
 | end_time | Date/time | Historical reservation end. |
 | duration_minutes | Integer | Reservation duration in whole minutes. |
 | room_id | Text | Historical room identifier. Preserve leading zeros and letters. |
-| booking_date | Date | Date derived from start_time. This is the reservation date, not the booking creation date. |
+| reservation_date | Date | Date derived from start_time. This is the reservation date, not the booking creation date. |
 | weekday | Text | Day of the week derived from start_time. |
 | start_hour | Integer | Hour of start_time, from 0 to 23. |
 | month | Integer | Month of start_time, from 1 to 12. |
 | is_weekend | Boolean | True for Saturday or Sunday; otherwise false. |
 
 The dictionary currently matches the supplied CSV.
-If booking_date is renamed to reservation_date, update this document
+If reservation_date is renamed to reservation_date, update this document
 and all scripts that read that column.
 
 Known limitations:

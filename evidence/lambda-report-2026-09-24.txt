@@ -1,0 +1,7 @@
+Function: roomly-get-rooms
+Log group: /aws/lambda/roomly-get-rooms
+Region: us-east-1
+Event timestamp: 2026-09-24T14:00:34.435Z
+
+END RequestId: 57d927de-ff3a-4ab6-afcc-89ff23c4000e
+REPORT RequestId: 57d927de-ff3a-4ab6-afcc-89ff23c4000e	Duration: 36.53 ms	Billed Duration: 37 ms	Memory Size: 128 MB	Max Memory Used: 92 MB	

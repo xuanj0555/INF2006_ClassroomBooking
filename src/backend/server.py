@@ -10,12 +10,14 @@ WEB=ROOT/'src/frontend'
 DB=Path(os.environ.get('BOOKING_DB', str(ROOT/'bookings.sqlite3')))
 SG=timezone(timedelta(hours=8))
 SESSIONS={}
-USERS={'student-a':('Alex Tan','student'),'student-b':('Jamie Lim','student'),'staff':('Morgan Lee','staff')}
-ROOMS=[('R001','Study Room A',4,'Level 2 · Quiet wing','Whiteboard,Power outlets'),('R002','Study Room B',6,'Level 2 · Learning commons','Display,Whiteboard'),('R003','Study Room C',8,'Level 3 · Collaboration zone','Display,Power outlets'),('R004','Study Room D',4,'Level 3 · Quiet wing','Whiteboard,Power outlets')]
+USERS={'student-a':('Alex Tan','student'),'student-b':('Jamie Lim','student'),'staff':('Morgan Lee','staff'),'admin':('Riley Chen','admin')}
+SEED_ROOMS=[('R001','Study Room A',4,'Level 2 · Quiet wing','Whiteboard,Power outlets'),('R002','Study Room B',6,'Level 2 · Learning commons','Display,Whiteboard'),('R003','Study Room C',8,'Level 3 · Collaboration zone','Display,Power outlets'),('R004','Study Room D',4,'Level 3 · Quiet wing','Whiteboard,Power outlets')]
 def conn():
  c=sqlite3.connect(DB,timeout=10);c.row_factory=sqlite3.Row;return c
 with conn() as c:
- c.executescript('CREATE TABLE IF NOT EXISTS bookings(id TEXT PRIMARY KEY,user TEXT,room TEXT,start TEXT,status TEXT,attendance TEXT,created TEXT); CREATE UNIQUE INDEX IF NOT EXISTS slot ON bookings(room,start) WHERE status="confirmed";')
+ c.executescript('CREATE TABLE IF NOT EXISTS bookings(id TEXT PRIMARY KEY,user TEXT,room TEXT,start TEXT,status TEXT,attendance TEXT,created TEXT); CREATE UNIQUE INDEX IF NOT EXISTS slot ON bookings(room,start) WHERE status="confirmed"; CREATE TABLE IF NOT EXISTS rooms(id TEXT PRIMARY KEY,name TEXT,capacity INTEGER,location TEXT,amenities TEXT,active INTEGER DEFAULT 1);')
+ if not c.execute('SELECT 1 FROM rooms LIMIT 1').fetchone():
+  c.executemany('INSERT INTO rooms VALUES(?,?,?,?,?,1)',SEED_ROOMS)
 def now():return datetime.now(SG)
 class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*a,**kw):super().__init__(*a,directory=str(WEB),**kw)
@@ -33,14 +35,18 @@ class Handler(SimpleHTTPRequestHandler):
   u=self.user()
   if p.path=='/api/session':return self.send(200,{'user':{'id':u,'name':USERS[u][0],'role':USERS[u][1]} if u else None,'today':now().date().isoformat()})
   if not u:return self.send(401,{'message':'Choose a demo account to continue.'})
-  if p.path=='/api/rooms':return self.send(200,[dict(zip(['id','name','capacity','location','amenities'],r)) for r in ROOMS])
+  if p.path=='/api/rooms':
+   with conn() as c:return self.send(200,[dict(r) for r in c.execute('SELECT id,name,capacity,location,amenities FROM rooms WHERE active=1 ORDER BY id')])
+  if p.path=='/api/admin/rooms':
+   if USERS[u][1]!='admin':return self.send(403,{'message':'Admin access required.'})
+   with conn() as c:return self.send(200,[dict(r) for r in c.execute('SELECT * FROM rooms ORDER BY id')])
   with conn() as c:
    c.execute('UPDATE bookings SET attendance="no_show" WHERE status="confirmed" AND attendance="pending" AND start < ?',((now()-timedelta(minutes=15)).isoformat(),))
    rows=[dict(r) for r in c.execute('SELECT * FROM bookings ORDER BY start')]
   if p.path=='/api/availability':
    date=parse_qs(p.query).get('date',[''])[0]
    return self.send(200,[{'room':r['room'],'start':r['start']} for r in rows if r['status']=='confirmed' and r['start'].startswith(date)])
-  if p.path=='/api/bookings':return self.send(200,rows if USERS[u][1]=='staff' else [r for r in rows if r['user']==u])
+  if p.path=='/api/bookings':return self.send(200,rows if USERS[u][1] in ('staff','admin') else [r for r in rows if r['user']==u])
   return self.send(404,{'message':'Not found'})
  def do_POST(self):
   origin=self.headers.get('Origin')
@@ -61,6 +67,23 @@ class Handler(SimpleHTTPRequestHandler):
   if self.path=='/api/logout':
    ck=SimpleCookie();ck.load(self.headers.get('Cookie',''));SESSIONS.pop(ck['session'].value,None)
    return self.send(200,{'ok':True},'session=; Max-Age=0; HttpOnly; SameSite=Strict; Path=/')
+  if self.path in ('/api/admin/rooms/create','/api/admin/rooms/update'):
+   if USERS[u][1]!='admin':return self.send(403,{'message':'Admin access required.'})
+   name=(body.get('name') or '').strip();location=(body.get('location') or '').strip();amenities=(body.get('amenities') or '').strip()
+   try:capacity=int(body.get('capacity'))
+   except (TypeError,ValueError):return self.send(400,{'message':'Capacity must be a number.'})
+   if not name or not location or capacity<1:return self.send(400,{'message':'Enter a name, location and a capacity of at least 1.'})
+   active=1 if body.get('active',True) else 0
+   with conn() as c:
+    if self.path=='/api/admin/rooms/create':
+     last=c.execute("SELECT id FROM rooms WHERE id LIKE 'R%' ORDER BY id DESC LIMIT 1").fetchone()
+     rid=f'R{(int(last["id"][1:])+1 if last else 1):03d}'
+     c.execute('INSERT INTO rooms VALUES(?,?,?,?,?,?)',(rid,name,capacity,location,amenities,active))
+     return self.send(200,{'id':rid,'message':'Room added.'})
+    rid=body.get('id')
+    if not c.execute('SELECT 1 FROM rooms WHERE id=?',(rid,)).fetchone():return self.send(404,{'message':'Room not found.'})
+    c.execute('UPDATE rooms SET name=?,capacity=?,location=?,amenities=?,active=? WHERE id=?',(name,capacity,location,amenities,active,rid))
+    return self.send(200,{'message':'Room updated.'})
   try:
    with conn() as c:
     c.execute('BEGIN IMMEDIATE')
@@ -70,7 +93,8 @@ class Handler(SimpleHTTPRequestHandler):
      except (TypeError,ValueError):return self.send(400,{'message':'Select a valid date and time.'})
      if dt.tzinfo is None:return self.send(400,{'message':'Timezone required.'})
      dt=dt.astimezone(SG);start=dt.isoformat()
-     if room not in [r[0] for r in ROOMS] or dt.minute or dt.second or dt.microsecond or not 9<=dt.hour<18 or dt<=now():return self.send(400,{'message':'Choose a future one-hour slot between 09:00 and 18:00.'})
+     active_rooms=[r['id'] for r in c.execute('SELECT id FROM rooms WHERE active=1')]
+     if room not in active_rooms or dt.minute or dt.second or dt.microsecond or not 9<=dt.hour<18 or dt<=now():return self.send(400,{'message':'Choose a future one-hour slot between 09:00 and 18:00.'})
      count=c.execute('SELECT COUNT(*) FROM bookings WHERE user=? AND status="confirmed" AND start>?',(u,now().isoformat())).fetchone()[0]
      if count>=2:return self.send(409,{'message':'You already have two upcoming bookings. Cancel one first.'})
      bid=secrets.token_hex(4).upper();c.execute('INSERT INTO bookings VALUES(?,?,?,?,?,?,?)',(bid,u,room,start,'confirmed','pending',now().isoformat()))
@@ -78,7 +102,7 @@ class Handler(SimpleHTTPRequestHandler):
     elif self.path in ['/api/cancel','/api/check-in']:
      r=c.execute('SELECT * FROM bookings WHERE id=?',(body.get('id'),)).fetchone()
      if not r:return self.send(404,{'message':'Booking not found.'})
-     if r['user']!=u and USERS[u][1]!='staff':return self.send(403,{'message':'You cannot change another student’s booking.'})
+     if r['user']!=u and USERS[u][1] not in ('staff','admin'):return self.send(403,{'message':'You cannot change another student’s booking.'})
      dt=datetime.fromisoformat(r['start'])
      if r['status']!='confirmed':return self.send(409,{'message':'This booking is no longer active.'})
      if self.path=='/api/cancel':

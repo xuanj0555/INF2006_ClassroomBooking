@@ -1,5 +1,5 @@
 """Local teaching prototype. Demo identity selection is NOT production authentication."""
-import json, sqlite3, secrets, os
+import json, sqlite3, secrets, os, csv
 from pathlib import Path
 from datetime import datetime, timedelta, timezone
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
@@ -14,10 +14,36 @@ USERS={'student-a':('Alex Tan','student'),'student-b':('Jamie Lim','student'),'s
 SEED_ROOMS=[('R001','Study Room A',4,'Level 2 · Quiet wing','Whiteboard,Power outlets'),('R002','Study Room B',6,'Level 2 · Learning commons','Display,Whiteboard'),('R003','Study Room C',8,'Level 3 · Collaboration zone','Display,Power outlets'),('R004','Study Room D',4,'Level 3 · Quiet wing','Whiteboard,Power outlets')]
 def conn():
  c=sqlite3.connect(DB,timeout=10);c.row_factory=sqlite3.Row;return c
+HISTORY_CSV=ROOT/'data/reservations_cleaned_newversion.csv'
+CAPACITY_CSV=ROOT/'data/room_capacity.csv'  # capacity per room_id, supplied separately from the reservation history
+def room_sort_key(rid):return (0,int(rid)) if rid.isdigit() else (1,rid)
 with conn() as c:
- c.executescript('CREATE TABLE IF NOT EXISTS bookings(id TEXT PRIMARY KEY,user TEXT,room TEXT,start TEXT,status TEXT,attendance TEXT,created TEXT); CREATE UNIQUE INDEX IF NOT EXISTS slot ON bookings(room,start) WHERE status="confirmed"; CREATE TABLE IF NOT EXISTS rooms(id TEXT PRIMARY KEY,name TEXT,capacity INTEGER,location TEXT,amenities TEXT,active INTEGER DEFAULT 1);')
+ c.executescript('CREATE TABLE IF NOT EXISTS bookings(id TEXT PRIMARY KEY,user TEXT,room TEXT,start TEXT,status TEXT,attendance TEXT,created TEXT); CREATE UNIQUE INDEX IF NOT EXISTS slot ON bookings(room,start) WHERE status="confirmed"; CREATE TABLE IF NOT EXISTS rooms(id TEXT PRIMARY KEY,name TEXT,capacity INTEGER,location TEXT,amenities TEXT,active INTEGER DEFAULT 1); CREATE TABLE IF NOT EXISTS reservations_history(start_time TEXT,end_time TEXT,duration_minutes INTEGER,room_id TEXT,reservation_date TEXT,weekday TEXT,start_hour INTEGER,month INTEGER,is_weekend INTEGER);')
+ if not c.execute('SELECT 1 FROM reservations_history LIMIT 1').fetchone() and HISTORY_CSV.exists():
+  with open(HISTORY_CSV,newline='') as f:
+   pos=f.tell();first=f.readline()
+   f.seek(pos if first.startswith('start_time') else f.tell())  # skip a stray title line above the real header, if present
+   reader=csv.DictReader(f)
+   batch=[(r['start_time'],r['end_time'],int(r['duration_minutes']),r['room_id'],r['reservation_date'],r['weekday'],int(r['start_hour']),int(r['month']),1 if r['is_weekend'].strip().upper()=='TRUE' else 0) for r in reader]
+  c.executemany('INSERT INTO reservations_history VALUES(?,?,?,?,?,?,?,?,?)',batch)
  if not c.execute('SELECT 1 FROM rooms LIMIT 1').fetchone():
-  c.executemany('INSERT INTO rooms VALUES(?,?,?,?,?,1)',SEED_ROOMS)
+  csv_ids=sorted({r[0] for r in c.execute('SELECT DISTINCT room_id FROM reservations_history')},key=room_sort_key)
+  if csv_ids:
+   capacity={}
+   if CAPACITY_CSV.exists():
+    with open(CAPACITY_CSV,newline='') as f:
+     capacity={r['room_id']:int(r['capacity']) for r in csv.DictReader(f)}
+   busiest=set(r['room_id'] for r in c.execute('SELECT room_id,COUNT(*) n FROM reservations_history GROUP BY room_id ORDER BY n DESC LIMIT 12'))
+   seed=[]
+   for rid in csv_ids:
+    cap=capacity.get(rid,0)
+    live=cap>0 and rid in busiest
+    if cap>0:loc='Among the 12 busiest rooms in the historical log — edit in Admin' if live else 'Not among the 12 busiest rooms — inactive by default, edit in Admin to activate'
+    else:loc='Capacity not provided by source data — set one before activating'
+    seed.append((rid,f'Room {rid}',cap,loc,'',1 if live else 0))
+  else:
+   seed=[(r[0],r[1],r[2],r[3],r[4],1) for r in SEED_ROOMS]
+  c.executemany('INSERT INTO rooms VALUES(?,?,?,?,?,?)',seed)
 def now():return datetime.now(SG)
 class Handler(SimpleHTTPRequestHandler):
  def __init__(self,*a,**kw):super().__init__(*a,directory=str(WEB),**kw)
@@ -40,6 +66,29 @@ class Handler(SimpleHTTPRequestHandler):
   if p.path=='/api/admin/rooms':
    if USERS[u][1]!='admin':return self.send(403,{'message':'Admin access required.'})
    with conn() as c:return self.send(200,[dict(r) for r in c.execute('SELECT * FROM rooms ORDER BY id')])
+  if p.path=='/api/admin/analytics/reservations':
+   if USERS[u][1]!='admin':return self.send(403,{'message':'Admin access required.'})
+   with conn() as c:
+    total=c.execute('SELECT COUNT(*) FROM reservations_history').fetchone()[0]
+    if not total:return self.send(200,{'source':'reservations_cleaned_newversion.csv (sample historical data)','total':0})
+    date_from,date_to=c.execute('SELECT MIN(reservation_date),MAX(reservation_date) FROM reservations_history').fetchone()
+    by_room=[dict(r) for r in c.execute('SELECT room_id,COUNT(*) count FROM reservations_history GROUP BY room_id ORDER BY count DESC LIMIT 12')]
+    order="CASE weekday WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 ELSE 7 END"
+    by_weekday=[dict(r) for r in c.execute(f'SELECT weekday,COUNT(*) count FROM reservations_history GROUP BY weekday ORDER BY {order}')]
+    by_hour=[dict(r) for r in c.execute('SELECT start_hour hour,COUNT(*) count FROM reservations_history GROUP BY start_hour ORDER BY hour')]
+    by_month=[dict(r) for r in c.execute('SELECT month,COUNT(*) count FROM reservations_history GROUP BY month ORDER BY month')]
+    avg_dur,weekend_n=c.execute('SELECT AVG(duration_minutes),SUM(is_weekend) FROM reservations_history').fetchone()
+    return self.send(200,{'source':'reservations_cleaned_newversion.csv (sample historical data)','total':total,'date_from':date_from,'date_to':date_to,'by_room':by_room,'by_weekday':by_weekday,'by_hour':by_hour,'by_month':by_month,'avg_duration_minutes':round(avg_dur,1),'weekend_share':round(weekend_n/total,3)})
+  if p.path=='/api/admin/analytics/forecast':
+   if USERS[u][1]!='admin':return self.send(403,{'message':'Admin access required.'})
+   with conn() as c:
+    total=c.execute('SELECT COUNT(*) FROM reservations_history').fetchone()[0]
+    if not total:return self.send(200,{'method':'naive historical average (not a trained or validated model)','total_samples':0})
+    weeks=c.execute('SELECT (JULIANDAY(MAX(reservation_date))-JULIANDAY(MIN(reservation_date)))/7.0 FROM reservations_history').fetchone()[0] or 1
+    order="CASE weekday WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 ELSE 7 END"
+    busiest_slots=[dict(r) for r in c.execute(f'SELECT weekday,start_hour hour,COUNT(*) count,ROUND(COUNT(*)/?,2) expected_per_week FROM reservations_history GROUP BY weekday,start_hour ORDER BY count DESC LIMIT 10',(weeks,))]
+    likely_busiest_rooms=[dict(r) for r in c.execute('SELECT room_id,COUNT(*) count,ROUND(COUNT(*)/?,2) expected_per_week FROM reservations_history GROUP BY room_id ORDER BY count DESC LIMIT 8',(weeks,))]
+    return self.send(200,{'method':'naive historical average (not a trained or validated model) — projects next week from last year of logs','total_samples':total,'weeks_of_history':round(weeks,1),'busiest_slots':busiest_slots,'likely_busiest_rooms':likely_busiest_rooms})
   with conn() as c:
    c.execute('UPDATE bookings SET attendance="no_show" WHERE status="confirmed" AND attendance="pending" AND start < ?',((now()-timedelta(minutes=15)).isoformat(),))
    rows=[dict(r) for r in c.execute('SELECT * FROM bookings ORDER BY start')]

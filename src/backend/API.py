@@ -24,6 +24,16 @@ def dispatch(service, method, path, query, body, user_id):
         if user_id is None:
             raise ApiError(401, "not_signed_in", "Please sign in to continue.")
 
+        if path == "/admin/rooms" and method == "GET":
+            return 200, service.admin_rooms(user_id)
+        if path == "/admin/rooms/create" and method == "POST":
+            return 201, service.save_room(user_id, body)
+        if path == "/admin/rooms/update" and method == "POST":
+            return 200, service.save_room(user_id, body, update=True)
+        if path == "/admin/analytics/reservations" and method == "GET":
+            return 200, service.reservation_analytics(user_id)
+        if path == "/admin/analytics/patterns" and method == "GET":
+            return 200, service.demand_patterns(user_id)
         if path == "/rooms" and method == "GET":
             return 200, service.list_rooms()
         if path == "/users" and method == "GET":

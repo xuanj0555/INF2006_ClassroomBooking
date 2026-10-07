@@ -1,6 +1,6 @@
 """Local development server. Demo account selection is NOT production authentication.
 
-All booking rules live in booking_service.py; routing lives in api.py.
+Booking rules live in bookingService.py; routing lives in API.py.
 This file only does HTTP plumbing, static files and the demo session cookie.
 Run:  python src/backend/server.py   ->  http://127.0.0.1:8765
 """
@@ -15,15 +15,15 @@ from urllib.parse import parse_qsl, urlparse
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from API import dispatch
-from bookingService import BookingService
+from adminService import RoomlyService
 
 ROOT = Path(__file__).resolve().parents[2]
 WEB = ROOT / "src" / "frontend"
-DB = Path(os.environ.get("BOOKING_DB", str(ROOT / "bookings.sqlite3")))
+DB = Path(os.environ.get("BOOKING_DB", str(ROOT / "roomly.sqlite3")))
 STATIC = {"/", "/index.html", "/app.js", "/style.css", "/favicon.svg"}
 MAX_BODY = 10_000
 
-service = BookingService(DB)
+service = RoomlyService(DB, history_csv=ROOT / "data" / "reservations_cleaned_newversion.csv")
 SESSIONS = {}
 
 
@@ -55,7 +55,7 @@ class Handler(SimpleHTTPRequestHandler):
     def read_body(self):
         try:
             n = int(self.headers.get("Content-Length", 0))
-            if n > MAX_BODY:
+            if n < 0 or n > MAX_BODY:
                 raise ValueError
             body = json.loads(self.rfile.read(n) or "{}")
             if not isinstance(body, dict):
@@ -115,5 +115,7 @@ class Handler(SimpleHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    print("Open http://127.0.0.1:8765 - local demo only", flush=True)
-    ThreadingHTTPServer(("127.0.0.1", 8765), Handler).serve_forever()
+    port = int(os.environ.get("PORT", "8765"))
+    httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+    print(f"Open http://127.0.0.1:{port} - local demo only", flush=True)
+    httpd.serve_forever()

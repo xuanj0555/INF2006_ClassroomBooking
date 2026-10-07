@@ -6,6 +6,8 @@ let bookings = [];
 let allBookings = [];
 let availability = {};
 let pending = null;
+let people = [];
+const esc = value => String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let cancelId = null;
 let toastTimer;
 
@@ -53,9 +55,11 @@ const fmt = s => new Date(s).toLocaleString('en-SG', {
 });
 
 function view(v) {
+  if (v === 'admin' && !user?.is_admin) return;
+  if (v === 'admin') adminView('rooms');
   if (v === 'insights' && user?.role !== 'faculty') return;
 
-  ['find', 'bookings', 'insights'].forEach(x => {
+  ['find', 'bookings', 'insights', 'admin'].forEach(x => {
     $('#' + x).hidden = x !== v;
   });
 
@@ -109,18 +113,18 @@ function renderRooms() {
     return `
       <article class="room">
         <div class="room-top">
-          <span class="room-id">${room.room_id}</span>
+          <span class="room-id">${esc(room.room_id)}</span>
           <span class="capacity">${room.capacity} people</span>
         </div>
         <div class="room-body">
-          <h3>${room.name}</h3>
-          <div class="location">${room.location}</div>
+          <h3>${esc(room.name)}</h3>
+          <div class="location">${esc(room.location)}</div>
           <div class="slot-label">SELECT A START TIME · 1 HOUR</div>
           <div class="slots">
             ${slots.map(slot => `
               <button
                 class="slot"
-                data-room="${room.room_id}"
+                data-room="${esc(room.room_id)}"
                 data-start="${slot.start_time}"
                 ${slot.available ? '' : 'disabled'}
                 title="${slot.available ? 'Book this slot' : 'Already reserved or unavailable'}"
@@ -150,7 +154,8 @@ function renderRooms() {
       };
 
       $('#summary').textContent =
-        `${room.name} · ${fmt(pending.start_time)} · 1 hour`;
+        `${esc(room.name)} · ${fmt(pending.start_time)} · 1 hour`;
+      $('#participants').innerHTML = people.filter(p => p.user_id !== user.user_id).map(p => `<label class="check"><input type="checkbox" name="participant" value="${esc(p.user_id)}">${esc(p.name)}</label>`).join('');
       $('#confirm').showModal();
     };
   });
@@ -186,6 +191,7 @@ function cards(list, staff = false) {
 
     const canCheckIn =
       booking.status === 'confirmed' &&
+      (booking.participants || []).some(p => p.user_id === user?.user_id) &&
       attendance === 'pending' &&
       new Date() >= dt &&
       new Date() <= new Date(dt.getTime() + 900000);
@@ -196,20 +202,20 @@ function cards(list, staff = false) {
     else if (attendance === 'no_show') badge = 'no-show';
 
     const participantText = staff
-      ? `<p>Organiser: ${booking.organiser_id}</p>`
+      ? `<p>Organiser: ${esc(booking.organiser_id)}</p>`
       : `<p>${booking.your_role === 'organiser' ? 'Organiser' : 'Participant'}</p>`;
 
     return `
       <article class="booking">
         <div class="detail">
-          <h3>${bookingRoomName(booking)}</h3>
+          <h3>${esc(bookingRoomName(booking))}</h3>
           <p>${fmt(booking.start_time)} · 1 hour</p>
-          <p>Reference ${booking.booking_id}</p>
-          ${participantText}
+          <p>Reference ${esc(booking.booking_id)}</p>
+          ${participantText}<p>Members: ${(booking.participants || []).map(p => esc(p.name)).join(', ')}</p>
         </div>
         <span class="badge">${badge}</span>
-        ${canCancel ? `<button data-cancel="${booking.booking_id}">Cancel</button>` : ''}
-        ${canCheckIn ? `<button data-check="${booking.booking_id}">Check in</button>` : ''}
+        ${canCancel ? `<button data-cancel="${esc(booking.booking_id)}">Cancel</button>` : ''}
+        ${canCheckIn ? `<button data-check="${esc(booking.booking_id)}">Check in</button>` : ''}
       </article>
     `;
   }).join('');
@@ -271,6 +277,8 @@ async function init() {
   $('#date').min = session.today;
 
   if (!user) {
+    const demo = await api('demo-accounts');
+    $('#account').replaceChildren(...demo.accounts.map(a => new Option(`${a.name} · ${a.is_admin ? 'Admin' : a.role}`, a.user_id)));
     $('#login').showModal();
     return;
   }
@@ -290,6 +298,8 @@ async function init() {
   $('#identity').append(name, button);
   $('#staffTab').hidden = user.role !== 'faculty';
 
+  $('#adminTab').hidden = !user.is_admin;
+  people = (await api('users')).users;
   await refresh();
 }
 
@@ -314,7 +324,8 @@ $('#confirmForm').onsubmit = async e => {
   $('#bookButton').disabled = true;
 
   try {
-    const result = await api('bookings', pending);
+    const participant_ids = [...document.querySelectorAll('[name=participant]:checked')].map(x => x.value);
+    const result = await api('bookings', {...pending, participant_ids});
     $('#confirm').close();
     toast(result.message || 'Booking confirmed.');
     await refresh();
@@ -358,3 +369,52 @@ $('#date').onchange = () => {
 $('#capacity').onchange = renderRooms;
 
 init().catch(error => toast(error.message, true));
+
+let adminRooms = [];
+function adminView(v) {
+  ['rooms', 'analytics', 'forecast'].forEach(x => $('#admin-' + x).hidden = x !== v);
+  document.querySelectorAll('.subtab').forEach(b => b.classList.toggle('active', b.dataset.admin === v));
+  (v === 'rooms' ? loadAdminRooms() : loadAnalytics(v)).catch(e => toast(e.message, true));
+}
+function resetRoomForm() {
+  $('#roomForm').reset(); $('#roomId').value = ''; $('#roomCancel').hidden = true;
+  $('#roomSubmit').textContent = 'Add room';
+}
+async function loadAdminRooms() {
+  adminRooms = (await api('admin/rooms')).rooms;
+  $('#roomList').innerHTML = adminRooms.map(r => `<article class="booking"><div class="detail"><h3>${esc(r.room_id)} · ${esc(r.name)}</h3><p>${esc(r.location)} · ${r.capacity} people · ${r.is_active ? 'Active' : 'Inactive'}</p><p>${esc(r.amenities)}</p></div><button data-edit="${esc(r.room_id)}">Edit</button></article>`).join('');
+  document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => {
+    const r = adminRooms.find(r => r.room_id === b.dataset.edit);
+    $('#roomId').value = r.room_id; $('#roomName').value = r.name;
+    $('#roomLocation').value = r.location; $('#roomCapacity').value = r.capacity;
+    $('#roomAmenities').value = r.amenities; $('#roomActive').checked = !!r.is_active;
+    $('#roomCancel').hidden = false; $('#roomSubmit').textContent = 'Save changes';
+  });
+}
+function chart(title, rows, label) {
+  const max = Math.max(1, ...rows.map(r => r.count));
+  return `<section class="note"><h3>${esc(title)}</h3>${rows.map(r => `<p>${esc(label(r))} — ${r.count} reservations<br><meter min="0" max="${max}" value="${r.count}" style="width:100%"></meter></p>`).join('')}</section>`;
+}
+async function loadAnalytics(v) {
+  if (v === 'forecast') {
+    const d = await api('admin/analytics/patterns');
+    $('#forecastBody').innerHTML = `<p>${esc(d.method)}. ${d.total_samples} historical records.</p>` + chart('Busiest historical times', d.busiest_slots, r => `${r.weekday} ${r.hour}:00`) + chart('Busiest historical rooms', d.likely_busiest_rooms, r => r.room_id);
+    return;
+  }
+  const d = await api('admin/analytics/reservations');
+  $('#analyticsSource').textContent = d.source;
+  $('#analyticsBody').innerHTML = d.total ? `<p>${d.total} reservations · ${esc(d.date_from)} to ${esc(d.date_to)}</p><div class="metrics">${[['Reserved hours', d.reserved_hours], ['Average minutes', d.avg_duration_minutes], ['Weekend share', Math.round(d.weekend_share * 100) + '%']].map(([k,v]) => `<div class="metric">${k}<strong>${v}</strong></div>`).join('')}</div>` + chart('Top historical rooms', d.by_room, r => r.room_id) + chart('By weekday', d.by_weekday, r => r.weekday) + chart('By hour', d.by_hour, r => `${r.hour}:00`) + chart('By month (all years combined)', d.by_month, r => r.month) : '<p>No historical dataset loaded.</p>';
+}
+document.querySelectorAll('.subtab').forEach(b => b.onclick = () => adminView(b.dataset.admin));
+$('#roomCancel').onclick = resetRoomForm;
+$('#roomForm').onsubmit = async e => {
+  e.preventDefault();
+  const room_id = $('#roomId').value;
+  try {
+    await api('admin/rooms/' + (room_id ? 'update' : 'create'), {
+      room_id, name: $('#roomName').value, capacity: Number($('#roomCapacity').value),
+      location: $('#roomLocation').value, amenities: $('#roomAmenities').value, is_active: $('#roomActive').checked
+    });
+    resetRoomForm(); await loadAdminRooms(); await refresh(); toast('Room saved.');
+  } catch (e) { toast(e.message, true); }
+};

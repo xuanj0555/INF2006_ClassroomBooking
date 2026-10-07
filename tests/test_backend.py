@@ -13,8 +13,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src" / "backend"))
-from api import dispatch
-from booking_service import SG, BookingService
+from API import dispatch
+from bookingService import SG, BookingService
 
 NOW = datetime(2026, 9, 28, 12, 0, tzinfo=SG)
 ALEX, JAMIE, SARAH, MORGAN, CASEY, RILEY = "U001", "U002", "U003", "U004", "U005", "U006"

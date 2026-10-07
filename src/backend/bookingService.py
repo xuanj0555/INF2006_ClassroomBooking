@@ -126,7 +126,7 @@ class BookingService:
         try:
             conn.executescript(SCHEMA)
             if conn.execute("SELECT COUNT(*) FROM rooms").fetchone()[0] == 0:
-                conn.executemany("INSERT INTO rooms VALUES(?,?,?,?,?)", SEED_ROOMS)
+                conn.executemany("INSERT INTO rooms(room_id,name,location,capacity,is_active) VALUES(?,?,?,?,?)", SEED_ROOMS)
             if conn.execute("SELECT COUNT(*) FROM users").fetchone()[0] == 0:
                 conn.executemany(
                     "INSERT INTO users(user_id,school_id,name,role,is_active,is_admin) VALUES(?,?,?,?,?,?)",
@@ -182,7 +182,7 @@ class BookingService:
     def demo_accounts(self):
         """Local demo login only. Not part of the public API."""
         with self._read() as c:
-            rows = c.execute("SELECT user_id,name,role FROM users WHERE is_active=1 ORDER BY user_id")
+            rows = c.execute("SELECT user_id,name,role,is_admin FROM users WHERE is_active=1 ORDER BY user_id")
             return [dict(r) for r in rows]
 
     def _require_active_user(self, conn, user_id):

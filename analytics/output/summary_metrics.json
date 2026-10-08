@@ -1,0 +1,12 @@
+{
+  "record_count": 51319,
+  "room_count": 46,
+  "average_duration_minutes": 95.43,
+  "median_duration_minutes": 90.0,
+  "total_reserved_hours": 81622.72,
+  "coverage_start": "2024-01-06",
+  "coverage_end": "2024-12-31",
+  "overlap_cases": 2,
+  "dates_without_reservation_starts": 9,
+  "source_timezone": null
+}

@@ -185,6 +185,27 @@ class TestCreate(Base):
         self.book(JAMIE, room="R002", start=slot(hour=11), participants=[ALEX])
         self.assertEqual(self.book(ALEX, start=slot(hour=12))[0], 201)
 
+    def test_repeated_identical_submission_returns_same_booking(self):
+        body = {
+            "room_id": "R001",
+            "start_time": slot(hour=10),
+            "participant_ids": [JAMIE, SARAH],
+        }
+        first_status, first = self.call(ALEX, "POST", "/bookings", body)
+        second_status, second = self.call(ALEX, "POST", "/bookings", body)
+        self.assertEqual(first_status, 201)
+        self.assertEqual(second_status, 201)
+        self.assertEqual(second["booking_id"], first["booking_id"])
+        self.assertEqual(self.count("bookings"), 1)
+        self.assertEqual(self.count("booking_participants"), 3)
+
+    def test_repeated_submission_with_participants_in_different_order_is_same_request(self):
+        first_status, first = self.book(ALEX, participants=[JAMIE, SARAH])
+        second_status, second = self.book(ALEX, participants=[SARAH, JAMIE])
+        self.assertEqual((first_status, second_status), (201, 201))
+        self.assertEqual(first["booking_id"], second["booking_id"])
+        self.assertEqual(self.count("bookings"), 1)
+
 
 class TestCancel(Base):
     def setUp(self):
@@ -386,6 +407,29 @@ class TestReads(Base):
         self.assertEqual([b["your_role"] for b in alex], ["organiser"])
         self.assertEqual([b["your_role"] for b in jamie], ["participant"])
         self.assertEqual(len(self.call(MORGAN, "GET", "/my-bookings")[1]["bookings"]), 0)
+
+    def test_room_bookings_returns_bookings_for_room_and_date(self):
+        self.book(ALEX, room="R001", start=slot(hour=10))
+        self.book(SARAH, room="R001", start=slot(hour=11))
+        status, body = self.call(
+            JAMIE, "GET", "/room-bookings",
+            query={"room_id": "R001", "date": "2026-10-01"},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(body["room_id"], "R001")
+        self.assertEqual([b["start_time"] for b in body["bookings"]], [slot(hour=10), slot(hour=11)])
+        self.assertEqual([b["status"] for b in body["bookings"]], ["confirmed", "confirmed"])
+
+    def test_room_bookings_does_not_return_other_room(self):
+        self.book(ALEX, room="R001", start=slot(hour=10))
+        self.book(SARAH, room="R002", start=slot(hour=11))
+        status, body = self.call(
+            JAMIE, "GET", "/room-bookings",
+            query={"room_id": "R001", "date": "2026-10-01"},
+        )
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body["bookings"]), 1)
+        self.assertEqual(body["bookings"][0]["room_id"], "R001")
 
     def test_users_list_hides_inactive_and_school_ids(self):
         status, body = self.call(ALEX, "GET", "/users")

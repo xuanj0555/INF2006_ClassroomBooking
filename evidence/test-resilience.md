@@ -14,12 +14,12 @@
 
 ## Results
 - Two stored versions: PASS
-- Expected earlier content: [enter initial text]
-- Actual downloaded earlier content: [enter observed text]
-- Expected current content: [enter newer text]
-- Actual downloaded current content: [enter observed text]
-- Earlier-version retrieval: [PASS only after checking]
-- Test date: [date you completed the download checks]
+- Expected earlier content: version one
+- Actual downloaded earlier content: version one
+- Expected current content: version two
+- Actual downloaded current content: version two
+- Earlier-version retrieval: PASS
+- Test date: 9 October 2026
 
 ## Evidence
 - evidence/s3-object-versions.png

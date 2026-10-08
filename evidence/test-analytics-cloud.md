@@ -44,9 +44,20 @@ historical reservation analysis stored in S3.
 | Total grouped by start hour | 51,319 | 51,319 | PASS |
 
 ## Website integration status
-The existing Reservation analytics page is retained.
-A request from that page to the AWS analytics endpoint has
-not yet been verified. This test covers the endpoint response.
+PASS — The existing Reservation analytics page requested:
+https://kw67yao8v7.execute-api.us-east-1.amazonaws.com/analytics
+
+Chrome Network showed HTTP 200 OK.
+
+The website displayed:
+- 51,319 reservations
+- 81,622.72 reserved hours
+- 95.43 average reservation minutes
+
+These values matched the saved analytics output.
+
+Test date: 8 October 2026
+Screenshot: evidence/analytics-website-network.png
 
 ## Evidence
 - Saved response: evidence/analytics-api-response.json

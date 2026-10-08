@@ -408,14 +408,97 @@ function chart(title, rows, label) {
   return `<section class="note"><h3>${esc(title)}</h3>${rows.map(r => `<p>${esc(label(r))} — ${r.count} reservations<br><meter min="0" max="${max}" value="${r.count}" style="width:100%"></meter></p>`).join('')}</section>`;
 }
 async function loadAnalytics(v) {
+  // The separate Demand patterns tab still uses the local backend.
   if (v === 'forecast') {
     const d = await api('admin/analytics/patterns');
-    $('#forecastBody').innerHTML = `<p>${esc(d.method)}. ${d.total_samples} historical records.</p>` + chart('Busiest historical times', d.busiest_slots, r => `${r.weekday} ${r.hour}:00`) + chart('Busiest historical rooms', d.likely_busiest_rooms, r => r.room_id);
+    $('#forecastBody').innerHTML =
+      `<p>${esc(d.method)}. ${d.total_samples} historical records.</p>` +
+      chart('Busiest historical times', d.busiest_slots,
+        r => `${r.weekday} ${r.hour}:00`) +
+      chart('Busiest historical rooms', d.likely_busiest_rooms,
+        r => r.room_id);
     return;
   }
-  const d = await api('admin/analytics/reservations');
-  $('#analyticsSource').textContent = d.source;
-  $('#analyticsBody').innerHTML = d.total ? `<p>${d.total} reservations · ${esc(d.date_from)} to ${esc(d.date_to)}</p><div class="metrics">${[['Reserved hours', d.reserved_hours], ['Average minutes', d.avg_duration_minutes], ['Weekend share', Math.round(d.weekend_share * 100) + '%']].map(([k,v]) => `<div class="metric">${k}<strong>${v}</strong></div>`).join('')}</div>` + chart('Top historical rooms', d.by_room, r => r.room_id) + chart('By weekday', d.by_weekday, r => r.weekday) + chart('By hour', d.by_hour, r => `${r.hour}:00`) + chart('By month (all years combined)', d.by_month, r => r.month) : '<p>No historical dataset loaded.</p>';
+
+  const body = $('#analyticsBody');
+  $('#analyticsSource').textContent = 'Loading historical analytics…';
+  body.textContent = 'Loading results from AWS…';
+
+  try {
+    const response = await fetch(
+      'https://kw67yao8v7.execute-api.us-east-1.amazonaws.com/analytics'
+    );
+
+    if (!response.ok) {
+      throw new Error(`Analytics API returned ${response.status}`);
+    }
+
+    const d = await response.json();
+
+    if (
+      !d.summary ||
+      !Array.isArray(d.by_room) ||
+      !Array.isArray(d.by_weekday) ||
+      !Array.isArray(d.by_start_hour)
+    ) {
+      throw new Error('Unexpected analytics response format');
+    }
+
+    const s = d.summary;
+
+    // Adapt AWS fields to the existing chart helper.
+    const rooms = d.by_room.map(r => ({
+      room_id: r.room_id,
+      count: r.reservation_count
+    })).sort((a, b) => b.count - a.count);
+
+    const weekdays = d.by_weekday.map(r => ({
+      weekday: r.weekday,
+      count: r.reservation_count
+    }));
+
+    const hours = d.by_start_hour.map(r => ({
+      hour: r.start_hour,
+      count: r.reservation_count
+    }));
+
+    const weekendCount = weekdays
+      .filter(r => ['Saturday', 'Sunday'].includes(r.weekday))
+      .reduce((sum, r) => sum + r.count, 0);
+
+    const weekendShare = s.record_count
+      ? Math.round(weekendCount / s.record_count * 100)
+      : 0;
+
+    $('#analyticsSource').textContent =
+      'Historical analytics from AWS · separate from live bookings';
+
+    const metrics = [
+      ['Reserved hours', s.total_reserved_hours],
+      ['Average minutes', s.average_duration_minutes],
+      ['Weekend share', `${weekendShare}%`]
+    ];
+
+    body.innerHTML =
+      `<p>${esc(String(s.record_count))} reservations · ` +
+      `${esc(s.coverage_start)} to ${esc(s.coverage_end)}</p>` +
+      `<div class="metrics">` +
+      metrics.map(([label, value]) =>
+        `<div class="metric">${esc(label)}` +
+        `<strong>${esc(String(value))}</strong></div>`
+      ).join('') +
+      `</div>` +
+      chart('Top historical rooms', rooms.slice(0, 12), r => r.room_id) +
+      chart('By weekday', weekdays, r => r.weekday) +
+      chart('By hour', hours, r => `${r.hour}:00`) +
+      `<p>Historical reservation counts can inform room planning. ` +
+      `They do not prove attendance or predict demand for the current ` +
+      `demo rooms.</p>`;
+  } catch (error) {
+    $('#analyticsSource').textContent = 'AWS analytics unavailable';
+    body.textContent = `Could not load analytics: ${error.message}`;
+    throw error;
+  }
 }
 document.querySelectorAll('.subtab').forEach(b => b.onclick = () => adminView(b.dataset.admin));
 $('#roomCancel').onclick = resetRoomForm;

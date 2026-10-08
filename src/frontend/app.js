@@ -69,7 +69,19 @@ function view(v) {
 }
 
 async function refresh() {
-  const roomData = await api('rooms');
+  const roomResponse = await fetch(
+  'https://kw67yao8v7.execute-api.us-east-1.amazonaws.com/rooms'
+);
+
+if (!roomResponse.ok) {
+  throw new Error(`AWS rooms request failed: ${roomResponse.status}`);
+}
+
+const roomData = await roomResponse.json();
+
+if (!Array.isArray(roomData.rooms)) {
+  throw new Error('AWS returned an unexpected room-list format.');
+}
   const bookingData = await api('my-bookings');
 
   rooms = roomData.rooms || [];

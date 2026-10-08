@@ -40,6 +40,8 @@ def dispatch(service, method, path, query, body, user_id):
             return 200, service.list_users(user_id)
         if path == "/availability" and method == "GET":
             return 200, service.availability(query.get("room_id"), query.get("date"))
+        if path == "/room-bookings" and method == "GET":
+            return 200, service.room_bookings(user_id, query.get("room_id"), query.get("date"))
         if path == "/my-bookings" and method == "GET":
             return 200, service.my_bookings(user_id)
         if path == "/all-bookings" and method == "GET":

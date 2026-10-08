@@ -20,6 +20,7 @@ The SQLite layer is the local stand-in for DynamoDB. When moving to AWS, the
 same checks map to a TransactWriteItems call with condition expressions on
 (room_id, slot) and (user_id, slot) lock items.
 """
+import hashlib
 import secrets
 import sqlite3
 from contextlib import contextmanager
@@ -85,6 +86,13 @@ CREATE TABLE IF NOT EXISTS booking_participants(
 );
 CREATE UNIQUE INDEX IF NOT EXISTS one_active_reservation_per_user_slot
   ON booking_participants(user_id, slot_start) WHERE is_active = 1;
+CREATE TABLE IF NOT EXISTS booking_request_dedup(
+  organiser_id TEXT NOT NULL REFERENCES users(user_id),
+  request_hash TEXT NOT NULL,
+  booking_id   TEXT NOT NULL REFERENCES bookings(booking_id),
+  created_at   TEXT NOT NULL,
+  PRIMARY KEY(organiser_id, request_hash)
+);
 CREATE TABLE IF NOT EXISTS attendance(
   booking_id    TEXT PRIMARY KEY REFERENCES bookings(booking_id),
   check_in_time TEXT,
@@ -238,6 +246,32 @@ class BookingService:
             })
         return {"room_id": room_id, "date": date_str, "slots": slots}
 
+    def room_bookings(self, user_id, room_id, date_str):
+        """Return the booking records for one room on one calendar date.
+
+        Only schedule information is returned; participant names and organiser
+        details are intentionally not exposed by this room/date lookup.
+        """
+        if not room_id or not date_str:
+            raise ApiError(400, "invalid_input", "room_id and date are required.")
+        try:
+            datetime.strptime(date_str, "%Y-%m-%d")
+        except ValueError:
+            raise ApiError(400, "invalid_input", "date must look like 2026-10-01.")
+        with self._read() as c:
+            self._require_active_user(c, user_id)
+            room = c.execute("SELECT room_id FROM rooms WHERE room_id=?", (room_id,)).fetchone()
+            if not room:
+                raise ApiError(404, "room_not_found", "Room not found.")
+            rows = c.execute(
+                """SELECT booking_id, room_id, start_time, end_time, status
+                   FROM bookings
+                   WHERE room_id=? AND start_time LIKE ?
+                   ORDER BY start_time""",
+                (room_id, date_str + "T%"),
+            ).fetchall()
+        return {"room_id": room_id, "date": date_str, "bookings": [dict(r) for r in rows]}
+
     def my_bookings(self, user_id):
         with self._write() as c:
             self._sweep_no_shows(c)
@@ -261,6 +295,17 @@ class BookingService:
             ).fetchall()
             return {"bookings": [self._view(c, row, viewer=user_id) for row in rows]}
 
+    @staticmethod
+    def _request_hash(room_id, start_time, participant_ids):
+        """Create a deterministic fingerprint for an identical booking request.
+
+        Participant order does not matter, and explicitly including the organiser
+        is treated the same as omitting the organiser because the backend always
+        adds the authenticated organiser.
+        """
+        payload = "|".join([room_id, start_time, *sorted(set(participant_ids))])
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
     def create_booking(self, user_id, body):
         if not isinstance(body, dict):
             raise ApiError(400, "invalid_input", "Request body must be a JSON object.")
@@ -277,6 +322,25 @@ class BookingService:
 
         with self._write() as c:
             organiser = self._require_active_user(c, user_id)
+
+            # Idempotency: an identical submission from the same organiser
+            # returns the already-created booking instead of creating another one.
+            canonical_participants = sorted(set(u for u in extras if u != organiser["user_id"]))
+            request_hash = self._request_hash(room_id, iso(start), canonical_participants)
+            prior = c.execute(
+                """SELECT booking_id FROM booking_request_dedup
+                   WHERE organiser_id=? AND request_hash=?""",
+                (organiser["user_id"], request_hash),
+            ).fetchone()
+            if prior:
+                existing = self._get_booking(c, prior["booking_id"])
+                if existing["status"] == "confirmed":
+                    return self._view(c, existing, viewer=user_id)
+                # A cancelled booking no longer occupies the idempotency slot.
+                c.execute(
+                    "DELETE FROM booking_request_dedup WHERE organiser_id=? AND request_hash=?",
+                    (organiser["user_id"], request_hash),
+                )
 
             room = c.execute("SELECT * FROM rooms WHERE room_id=?", (room_id,)).fetchone()
             if not room:
@@ -349,6 +413,11 @@ class BookingService:
                     " VALUES(?,?,?,?,?,'confirmed',?)",
                     (booking_id, organiser["user_id"], room_id, iso(start), iso(end), stamp),
                 )
+                c.execute(
+                    "INSERT INTO booking_request_dedup(organiser_id,request_hash,booking_id,created_at)"
+                    " VALUES(?,?,?,?)",
+                    (organiser["user_id"], request_hash, booking_id, stamp),
+                )
                 c.executemany(
                     "INSERT INTO booking_participants(booking_id,user_id,slot_start,joined_at) VALUES(?,?,?,?)",
                     [(booking_id, uid, iso(start), stamp) for uid in everyone],
@@ -373,6 +442,7 @@ class BookingService:
             c.execute("UPDATE bookings SET status='cancelled', cancelled_at=? WHERE booking_id=?",
                       (iso(now), booking_id))
             c.execute("UPDATE booking_participants SET is_active=0 WHERE booking_id=?", (booking_id,))
+            c.execute("DELETE FROM booking_request_dedup WHERE booking_id=?", (booking_id,))
             c.execute("UPDATE attendance SET outcome='not_applicable' WHERE booking_id=?", (booking_id,))
             row = self._get_booking(c, booking_id)
             return self._view(c, row, viewer=user_id)

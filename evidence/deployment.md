@@ -3,7 +3,7 @@
 ## AWS configuration
 - Region: us-east-1
 - S3 bucket: roomly-analytics-2026-11
-- Block all public access: [On/Off, as checked]
+- Block all public access: On
 - Lambda function: roomly-get-analytics
 - Lambda execution role: LabRole
 - Lambda environment variable: ANALYTICS_BUCKET

@@ -90,3 +90,11 @@ Use Roomly to perform an authenticated request and confirm:
 - Cancelling that booking releases the slot.
 - A student request to `GET /admin/rooms` returns HTTP 403.
 - An administrator request to the same endpoint returns HTTP 200.
+
+### Analytics Lambda source
+
+Function: roomly-get-analytics
+Repository source: src/backend/analytics_lambda.py
+AWS source filename: lambda_function.py
+
+The repository file contains a copy of the deployed analytics code.

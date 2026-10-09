@@ -20,7 +20,7 @@ from adminService import RoomlyService
 ROOT = Path(__file__).resolve().parents[2]
 WEB = ROOT / "src" / "frontend"
 DB = Path(os.environ.get("BOOKING_DB", str(ROOT / "roomly.sqlite3")))
-STATIC = {"/", "/index.html", "/app.js", "/style.css", "/favicon.svg"}
+STATIC = {"/", "/index.html", "/app.js", "/auth.js", "/style.css", "/favicon.svg"}
 MAX_BODY = 10_000
 
 service = RoomlyService(DB, history_csv=ROOT / "data" / "reservations_cleaned_newversion.csv")

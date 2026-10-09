@@ -1,4 +1,5 @@
 const $ = s => document.querySelector(s);
+const AWS_API = 'https://kw67yao8v7.execute-api.us-east-1.amazonaws.com';
 
 let user = null;
 let rooms = [];
@@ -22,7 +23,17 @@ async function api(path, data = undefined, method = undefined) {
     options.body = JSON.stringify(data);
   }
 
-  const response = await fetch('/api/' + path, options);
+  const accessToken = roomlyAuth.token();
+  if (!accessToken) {
+    if (!$('#login').open) $('#login').showModal();
+    throw Error('Please sign in to continue.');
+  }
+  options.headers.Authorization = 'Bearer ' + accessToken;
+  const response = await fetch(AWS_API + '/' + path, options);
+  if (response.status === 401) {
+    if (!$('#login').open) $('#login').showModal();
+    throw Error('Your sign-in has expired or was rejected. Please sign in again.');
+  }
 
   let value = {};
   try {
@@ -32,13 +43,14 @@ async function api(path, data = undefined, method = undefined) {
   }
 
   if (!response.ok) {
-    throw Error(value.message || 'Request failed');
+    throw Error(`${options.method} /${path.split('?')[0]} failed (${response.status}): ${value.message || 'Request failed'}`);
   }
 
   return value;
 }
 
 function toast(msg, error = false) {
+  if (error && $('#login').open) { $('#loginError').textContent = msg; $('#loginError').hidden = false; }
   $('#toast').textContent = msg;
   $('#toast').className = error ? 'error' : '';
   $('#toast').style.display = 'block';
@@ -69,15 +81,7 @@ function view(v) {
 }
 
 async function refresh() {
-  const roomResponse = await fetch(
-  'https://kw67yao8v7.execute-api.us-east-1.amazonaws.com/rooms'
-);
-
-if (!roomResponse.ok) {
-  throw new Error(`AWS rooms request failed: ${roomResponse.status}`);
-}
-
-const roomData = await roomResponse.json();
+  const roomData = await api('rooms');
 
 if (!Array.isArray(roomData.rooms)) {
   throw new Error('AWS returned an unexpected room-list format.');
@@ -282,54 +286,46 @@ function renderBookings() {
 }
 
 async function init() {
-  const session = await api('session');
-  user = session.user;
-
-  if (!$('#date').value) $('#date').value = session.today;
-  $('#date').min = session.today;
-
-  if (!user) {
-    const demo = await api('demo-accounts');
-    $('#account').replaceChildren(...demo.accounts.map(a => new Option(`${a.name} · ${a.is_admin ? 'Admin' : a.role}`, a.user_id)));
+  await roomlyAuth.callback();
+  if (!roomlyAuth.token()) {
     $('#login').showModal();
     return;
   }
-
+  const session = await api('session');
+  user = session.user;
+  if (!user) throw Error('Your sign-in account is not linked to a Roomly user.');
+  if (!$('#date').value) $('#date').value = session.today;
+  $('#date').min = session.today;
   $('#identity').replaceChildren();
-
   const name = document.createElement('span');
   name.textContent = user.name;
-
   const button = document.createElement('button');
-  button.textContent = 'Switch account';
-  button.onclick = async () => {
-    await api('logout', {});
-    location.reload();
-  };
-
+  button.textContent = 'Sign out';
+  button.onclick = () => roomlyAuth.signOut();
   $('#identity').append(name, button);
   $('#staffTab').hidden = user.role !== 'faculty';
-
   $('#adminTab').hidden = !user.is_admin;
   people = (await api('users')).users;
   await refresh();
 }
 
 $('#login').addEventListener('cancel', e => e.preventDefault());
-
 $('#loginForm').onsubmit = async e => {
   e.preventDefault();
-
+  const button = $('#loginSubmit');
+  $('#loginError').hidden = true;
+  button.disabled = true;
+  button.textContent = 'Opening sign-in…';
   try {
-    await api('demo-login', {
-      user_id: $('#account').value
-    });
-    $('#login').close();
-    await init();
+    if (!window.roomlyAuth) throw Error('Sign-in could not load. Restart the server and reload this page.');
+    await roomlyAuth.signIn();
   } catch (error) {
     toast(error.message, true);
+    button.disabled = false;
+    button.textContent = 'Sign in';
   }
 };
+
 
 $('#confirmForm').onsubmit = async e => {
   e.preventDefault();
@@ -380,7 +376,21 @@ $('#date').onchange = () => {
 
 $('#capacity').onchange = renderRooms;
 
-init().catch(error => toast(error.message, true));
+init().catch(error => {
+  // A data-loading failure must not turn a signed-in user into a signed-out user.
+  if (!roomlyAuth.token() && !$('#login').open) $('#login').showModal();
+  toast(error.message, true);
+  if (!$('#login').open) {
+    let notice = document.getElementById('startupError');
+    if (!notice) {
+      notice = document.createElement('p');
+      notice.id = 'startupError';
+      notice.setAttribute('role', 'alert');
+      document.querySelector('main').prepend(notice);
+    }
+    notice.textContent = 'Roomly could not finish loading. ' + error.message + ' Reload after the API configuration is corrected.';
+  }
+});
 
 let adminRooms = [];
 function adminView(v) {
@@ -389,17 +399,17 @@ function adminView(v) {
   (v === 'rooms' ? loadAdminRooms() : loadAnalytics(v)).catch(e => toast(e.message, true));
 }
 function resetRoomForm() {
-  $('#roomForm').reset(); $('#roomId').value = ''; $('#roomCancel').hidden = true;
+  $('#roomForm').reset(); $('#roomId').value = ''; $('#roomId').readOnly = true; delete $('#roomForm').dataset.editingId; $('#roomCancel').hidden = true;
   $('#roomSubmit').textContent = 'Add room';
 }
 async function loadAdminRooms() {
   adminRooms = (await api('admin/rooms')).rooms;
-  $('#roomList').innerHTML = adminRooms.map(r => `<article class="booking"><div class="detail"><h3>${esc(r.room_id)} · ${esc(r.name)}</h3><p>${esc(r.location)} · ${r.capacity} people · ${r.is_active ? 'Active' : 'Inactive'}</p><p>${esc(r.amenities)}</p></div><button data-edit="${esc(r.room_id)}">Edit</button></article>`).join('');
+  $('#roomList').innerHTML = adminRooms.map(r => `<article class="booking"><div class="detail"><h3>${esc(r.room_id)} · ${esc(r.name)}</h3><p>${esc(r.location)} · ${r.capacity} people · ${r.is_active ? 'Active' : 'Inactive'}</p></div><button data-edit="${esc(r.room_id)}">Edit</button></article>`).join('');
   document.querySelectorAll('[data-edit]').forEach(b => b.onclick = () => {
     const r = adminRooms.find(r => r.room_id === b.dataset.edit);
-    $('#roomId').value = r.room_id; $('#roomName').value = r.name;
+    $('#roomForm').dataset.editingId = r.room_id; $('#roomId').readOnly = true; $('#roomId').value = r.room_id; $('#roomName').value = r.name;
     $('#roomLocation').value = r.location; $('#roomCapacity').value = r.capacity;
-    $('#roomAmenities').value = r.amenities; $('#roomActive').checked = !!r.is_active;
+    $('#roomActive').checked = !!r.is_active;
     $('#roomCancel').hidden = false; $('#roomSubmit').textContent = 'Save changes';
   });
 }
@@ -408,15 +418,48 @@ function chart(title, rows, label) {
   return `<section class="note"><h3>${esc(title)}</h3>${rows.map(r => `<p>${esc(label(r))} — ${r.count} reservations<br><meter min="0" max="${max}" value="${r.count}" style="width:100%"></meter></p>`).join('')}</section>`;
 }
 async function loadAnalytics(v) {
-  // The separate Demand patterns tab still uses the local backend.
   if (v === 'forecast') {
-    const d = await api('admin/analytics/patterns');
-    $('#forecastBody').innerHTML =
-      `<p>${esc(d.method)}. ${d.total_samples} historical records.</p>` +
-      chart('Busiest historical times', d.busiest_slots,
-        r => `${r.weekday} ${r.hour}:00`) +
-      chart('Busiest historical rooms', d.likely_busiest_rooms,
-        r => r.room_id);
+    const body = $('#forecastBody');
+    body.textContent = 'Loading historical demand patterns from AWS…';
+    try {
+      const d = await api('analytics');
+      if (!d.summary || !Array.isArray(d.by_room) ||
+          !Array.isArray(d.by_weekday) || !Array.isArray(d.by_start_hour)) {
+        throw Error('Unexpected analytics response format');
+      }
+      const rank = (rows, field) => rows.map(r => ({
+        label: String(r[field]), count: Number(r.reservation_count)
+      })).sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+      const rooms = rank(d.by_room, 'room_id');
+      const days = rank(d.by_weekday, 'weekday');
+      const hours = rank(d.by_start_hour, 'start_hour');
+      if ([...rooms, ...days, ...hours].some(r => !Number.isFinite(r.count) || r.count < 0)) {
+        throw Error('Invalid historical reservation counts');
+      }
+      const hourLabel = r => `${String(r.label).padStart(2, '0')}:00`;
+      const highlights = [
+        ['Busiest historical room', rooms[0]?.label ?? 'No data'],
+        ['Busiest weekday', days[0]?.label ?? 'No data'],
+        ['Busiest start hour', hours[0] ? hourLabel(hours[0]) : 'No data']
+      ];
+      body.innerHTML =
+        `<p>Historical patterns from AWS · ${esc(d.summary.record_count)} reservations · ` +
+        `${esc(d.summary.coverage_start)} to ${esc(d.summary.coverage_end)}</p>` +
+        `<div class="metrics">` + highlights.map(([label, value]) =>
+          `<div class="metric">${esc(label)}<strong>${esc(value)}</strong></div>`
+        ).join('') + `</div>` +
+        chart('Most reserved historical rooms', rooms.slice(0, 10), r => r.label) +
+        chart('Weekdays ranked by reservation count', days, r => r.label) +
+        chart('Start hours ranked by reservation count', hours, hourLabel) +
+        `<p>Rankings use recorded reservation counts, not occupancy rates or attendance. ` +
+        `Tied counts share the same rank; the cards show one of the tied entries. ` +
+        `Weekday and hour totals are separate summaries and cannot identify a busiest weekday–hour combination. ` +
+        `Use these patterns to review historical scheduling and room demand. ` +
+        `They are not predictions or live availability for the four demo rooms.</p>`;
+    } catch (error) {
+      body.textContent = `Could not load demand patterns: ${error.message}`;
+      throw error;
+    }
     return;
   }
 
@@ -425,15 +468,7 @@ async function loadAnalytics(v) {
   body.textContent = 'Loading results from AWS…';
 
   try {
-    const response = await fetch(
-      'https://kw67yao8v7.execute-api.us-east-1.amazonaws.com/analytics'
-    );
-
-    if (!response.ok) {
-      throw new Error(`Analytics API returned ${response.status}`);
-    }
-
-    const d = await response.json();
+    const d = await api('analytics');
 
     if (
       !d.summary ||
@@ -504,11 +539,12 @@ document.querySelectorAll('.subtab').forEach(b => b.onclick = () => adminView(b.
 $('#roomCancel').onclick = resetRoomForm;
 $('#roomForm').onsubmit = async e => {
   e.preventDefault();
-  const room_id = $('#roomId').value;
+  const editingId = $('#roomForm').dataset.editingId;
+  const room_id = editingId;
   try {
-    await api('admin/rooms/' + (room_id ? 'update' : 'create'), {
+    await api('admin/rooms/' + (editingId ? 'update' : 'create'), {
       room_id, name: $('#roomName').value, capacity: Number($('#roomCapacity').value),
-      location: $('#roomLocation').value, amenities: $('#roomAmenities').value, is_active: $('#roomActive').checked
+      location: $('#roomLocation').value, is_active: $('#roomActive').checked
     });
     resetRoomForm(); await loadAdminRooms(); await refresh(); toast('Room saved.');
   } catch (e) { toast(e.message, true); }

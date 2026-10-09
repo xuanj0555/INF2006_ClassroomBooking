@@ -310,20 +310,33 @@ class DynamoDBService:
         if not isinstance(body, dict):
             raise ApiError(400, 'invalid_input', 'JSON object required.')
         rid, cap, active = body.get('room_id'), body.get('capacity'), body.get('is_active')
-        if not isinstance(rid, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', rid):
+        if update and (not isinstance(rid, str) or not re.fullmatch(r'[A-Za-z0-9_-]{1,64}', rid)):
             raise ApiError(400, 'invalid_input', 'Invalid room ID.')
         if type(cap) is not int or not 1 <= cap <= 1000 or type(active) is not bool:
             raise ApiError(400, 'invalid_input', 'Capacity must be an integer 1–1000; is_active must be Boolean.')
         for key in ('name', 'location'):
             if not isinstance(body.get(key), str) or not body[key].strip() or len(body[key]) > 300:
                 raise ApiError(400, 'invalid_input', 'Room name and location are required, maximum 300 characters.')
-        amenities = body.get('amenities', '')
-        if not isinstance(amenities, str) or len(amenities) > 300:
-            raise ApiError(400, 'invalid_input', 'Invalid amenities.')
         for _ in range(5):
             rev = self.revision()
             if self.actor(uid).get('is_admin') is not True:
                 raise ApiError(403, 'not_allowed', 'Administrator access required.')
+            counter_action = None
+            if not update:
+                counter_key = {'resource_id': 'SYSTEM#ROOM_SEQUENCE', 'slot_start': 'META'}
+                counter = self.get(self.reservations, counter_key)
+                # Bootstrap only from conventional room IDs, not old random IDs.
+                highest = max([int(r['room_id'][1:]) for r in self.scan(self.rooms)
+                               if re.fullmatch(r'R[0-9]{3,6}', r['room_id'])] + [0])
+                previous = int(counter['last_room_number']) if counter else 0
+                number = max(previous, highest) + 1
+                rid = f'R{number:03d}'
+                put = {'TableName': self.reservations.name,
+                       'Item': av({**counter_key, 'last_room_number': number}),
+                       'ConditionExpression': 'last_room_number = :previous' if counter else 'attribute_not_exists(resource_id)'}
+                if counter:
+                    put['ExpressionAttributeValues'] = av({':previous': previous})
+                counter_action = {'Put': put}
             old = self.get(self.rooms, {'room_id': rid})
             if bool(old) != bool(update):
                 raise ApiError(409 if old else 404, 'room_exists' if old else 'room_not_found',
@@ -333,9 +346,11 @@ class DynamoDBService:
                    and len(b['participant_ids']) > cap for b in self.scan(self.bookings)):
                 raise ApiError(409, 'capacity_in_use', 'Capacity is below an existing future booking group.')
             item = {'room_id': rid, 'name': body['name'].strip(), 'location': body['location'].strip(),
-                    'capacity': cap, 'is_active': active, 'amenities': amenities}
+                    'capacity': cap, 'is_active': active}
             actions = [self.guard(rev), {'Put': {'TableName': self.rooms.name, 'Item': av(item),
                 'ConditionExpression': 'attribute_exists(room_id)' if update else 'attribute_not_exists(room_id)'}}]
+            if counter_action:
+                actions.append(counter_action)
             if self.commit(actions):
                 return {'room': item}
         raise ApiError(409, 'concurrent_change', 'Concurrent change. Refresh and retry.')

@@ -310,6 +310,11 @@ async function init() {
 }
 
 $('#login').addEventListener('cancel', e => e.preventDefault());
+window.addEventListener('pageshow', () => {
+  const button = $('#loginSubmit');
+  button.disabled = false;
+  button.textContent = 'Sign in';
+});
 $('#loginForm').onsubmit = async e => {
   e.preventDefault();
   const button = $('#loginSubmit');

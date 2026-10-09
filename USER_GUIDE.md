@@ -48,8 +48,6 @@ Click Sign in, enter your assigned Cognito username and password on the Amazon C
 | U002 | Test Student B | Find rooms, book, view own bookings and check in |
 | U003 | Test Admin | Room management, staff overview and analytics |
 
-These are application IDs and display names, not necessarily Cognito login usernames. Obtain the exact Cognito username and password from the project owner through a private channel. Never commit passwords, access tokens, AWS access keys or a filled credential sheet to this repository.
-
 Public self-service registration is not enabled. The AWS owner provisions test accounts and maps each Cognito identity to exactly one active RoomlyUsers record. Admin access is assigned by the owner; users cannot select it during login.
 
 To switch accounts, select Sign out at the top of Roomly, then Sign in with the other account. Sign in again if your session expires.
@@ -94,7 +92,3 @@ Reservation analytics and Demand patterns describe the historical analytics data
 | Failed to fetch | Check connectivity, API availability and CORS; use the browser Network panel to identify the failing request. |
 
 Share error text, request path and time with the owner. Do not share passwords or Authorization headers/tokens in screenshots.
-
-## 8. Before recording project evidence
-
-Test login, booking persistence, participant visibility, conflicting bookings, cancellation, check-in and admin access restrictions. Record expected and actual results with a date. Redact sensitive fields. Local syntax checks and a successful Git push do not establish that every deployed AWS workflow passes.

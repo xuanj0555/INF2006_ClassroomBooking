@@ -90,5 +90,3 @@ Use Roomly to perform an authenticated request and confirm:
 - Cancelling that booking releases the slot.
 - A student request to `GET /admin/rooms` returns HTTP 403.
 - An administrator request to the same endpoint returns HTTP 200.
-
-Record the actual results, test date and evidence paths in the corresponding test documents. Inspect CloudWatch logs if a request fails.d.

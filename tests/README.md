@@ -360,3 +360,14 @@ project_manifest.yaml.
 AI-assisted work, external code, dataset sources, licences
 and verification activities are documented in
 [AI_USE_DECLARATION.md](AI_USE_DECLARATION.md).
+
+## 15. Backend Test Setup
+
+The backend DynamoDB tests use `boto3`. Install the test dependency before running the test suite.
+
+### 16. Install dependencies
+
+From the project root:
+
+```bash
+python -m pip install -r tests/requirements.txt

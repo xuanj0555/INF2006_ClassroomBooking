@@ -12,3 +12,23 @@
 #login small{margin-top:20px;text-align:center}
 #loginError{margin-top:18px;padding:12px 14px;background:#fff0ed;color:#813c32;border-radius:8px;font-size:14px}
 @media(max-width:480px){#login{padding:26px}}
+
+#participants label.check {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 18px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+#participants label.check input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  flex-shrink: 0;
+  order: 2;
+}

@@ -26,7 +26,7 @@ Her testing responsibility was the functional UI workflow, including checking th
 
 Stanberley was responsible for the backend booking logic and validation. His work covered the logical handling of users, rooms, bookings and participants, together with booking validation rules such as participant validation, duplicate participant checking, automatic inclusion of the organiser, room capacity, organiser booking limits, room conflicts and participant conflicts.
 
-He also worked on booking creation, cancellation and reservation handling, including releasing room and participant reservations when a booking is cancelled. The backend was designed to use transactional operations to prevent partial booking updates and to handle repeated or conflicting booking requests.
+She also worked on booking creation, cancellation and reservation handling, including releasing room and participant reservations when a booking is cancelled. The backend was designed to use transactional operations to prevent partial booking updates and to handle repeated or conflicting booking requests.
 
 Additional backend work included DynamoDB service integration, reservation records, concurrent booking handling, authorisation checks, check-in validation, room-number generation and automated backend testing. The backend test suite covers successful and rejected booking scenarios, room and participant conflicts, cancellation, capacity, booking limits, check-in timing and other edge cases.
 

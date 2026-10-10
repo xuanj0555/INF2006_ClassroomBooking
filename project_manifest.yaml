@@ -1,42 +1,62 @@
 project:
-  group_id: "Gxxx"
-  title: "Campus Room Booking with No-show Prediction"
-  problem_statement: "Manage room bookings and explore no-show prediction using synthetic data."
+  group_id: "P2-GROUP-01"
+  title: "Roomly – Campus Room Booking Service"
+  problem_statement: "Roomly provides a secure cloud-based campus room booking service that allows users to view room availability, make participant-aware bookings, cancel bookings and use historical reservation-demand analytics to understand room usage patterns."
   cloud_provider: "AWS"
   repository_commit: ""
 
 team:
   members:
-    - name: "TBD"
-      student_id: "TBD"
-      role: "TBD"
+    - name: "Sharlene"
+      student_id: "2503489"
+      role: "Frontend and User Experience"
+
+    - name: "Stanberley"
+      student_id: "2501376"
+      role: "Booking Backend and Validation"
+
+    - name: "Shermaine"
+      student_id: "2501469"
+      role: "AWS and Cloud Integration"
+
+    - name: "Yuchen"
+      student_id: "2503041"
+      role: "Data and Analytics"
 
 architecture:
   diagram: "evidence/architecture.png"
-  service_model: "TBD"
-  deployment_model: "TBD"
-  components: []
 
 evidence:
   functional_test: "evidence/test-functional.md"
   security_test: "evidence/test-security.md"
   data_ai_test: "evidence/test-data-ai.md"
   scale_resilience_test: "evidence/test-resilience.md"
-  monitoring: "evidence/monitoring.md"
 
 data_ai:
   dataset: "data/README.md"
-  method: "TBD"
-  evaluation: "TBD"
-  reproducible_command: "TBD"
+  method: "Descriptive analysis of historical room reservation data using Python, pandas and Jupyter. The analysis examines reservation counts by room, weekday and start hour, total reserved hours, and reservation duration statistics."
+  evaluation: "The cleaned dataset contains 51,319 reservation records and 46 room identifiers. Validation checks confirm that grouped reservation counts by room, weekday and start hour sum to 51,319. Reservation-duration calculations and exported analytical outputs are also checked."
+  reproducible_command: "Create a Python virtual environment, install the dependencies from analytics/requirements.txt, open analytics/reservation_analysis.ipynb and run all cells from top to bottom."
 
 security:
   threat_control_map: "evidence/threat-control-map.md"
-  secrets_handling: "TBD"
+  secrets_handling: "Authentication is handled through Amazon Cognito and protected API routes use JWT-based authorization. AWS service access uses Lambda execution roles rather than storing AWS access keys in source code. Credentials, tokens and sensitive configuration values must not be included in the submission."
 
 run:
-  prerequisites: []
-  commands: []
+  prerequisites:
+    - "Python 3.12 or compatible Python version"
+    - "pip"
+    - "Jupyter or the VS Code Jupyter extension for analytics reproduction"
+    - "Internet access for the deployed AWS service and Cognito authentication"
+    - "AWS credentials are required only for operations that directly access AWS and are not included in the submission"
+
+  commands:
+    - "Run backend tests with: PYTHONPATH=src/backend:. python -m unittest tests.test_backend tests.test_admin tests.test_dynamodb_service -q"
+    - "On Windows PowerShell, set the backend path with: $env:PYTHONPATH='src/backend;.'"
+    - "Run the local frontend with: py -m http.server 8766 --bind 127.0.0.1 --directory src/frontend"
+    - "Open the local frontend at: http://127.0.0.1:8766/"
+    - "Install analytics dependencies with: python -m pip install -r analytics/requirements.txt"
+    - "Run all cells in analytics/reservation_analysis.ipynb from top to bottom"
 
 declarations:
   ai_use: "AI_USE_DECLARATION.md"

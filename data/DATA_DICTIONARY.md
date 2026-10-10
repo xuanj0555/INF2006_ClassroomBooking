@@ -91,7 +91,7 @@ in src/booking_rules.md.
 
 ## 6. Historical reservation dataset
 
-File: data/processed/reservations_cleaned.csv
+File: data/reservations_cleaned_newversion.csv
 
 Source:
 https://www.kaggle.com/datasets/aceeedev/university-library-room-reservations
@@ -113,9 +113,9 @@ Inspected file:
 | month | Integer | Month of start_time, from 1 to 12. |
 | is_weekend | Boolean | True for Saturday or Sunday; otherwise false. |
 
-The dictionary currently matches the supplied CSV.
-If reservation_date is renamed to reservation_date, update this document
-and all scripts that read that column.
+The dictionary matches the generated cleaned CSV.
+If any field is renamed, update this document, the cleaning script,
+the analytics notebook and all application code that reads that field.
 
 Known limitations:
 - No user identities, participant lists or attendance outcomes.
@@ -127,7 +127,8 @@ Known limitations:
 - Some whole-minute durations differ from timestamp calculations by
   up to 30 seconds, consistent with rounding.
 - Historical reservation durations range from 5 to 240 minutes.
-- The source timezone and dataset licence must be documented.
+- The source timezone is not documented and no timezone conversion is applied.
+- The Kaggle source lists the dataset under the MIT licence. Further source and licence details are recorded in data/README.md.
 
 ## 7. Analytics definitions
 
@@ -145,6 +146,3 @@ hours. Overlapping records may inflate totals and must be reviewed.
 
 These metrics describe recorded reservations, not actual attendance,
 physical occupancy or unsuccessful booking attempts.
-
-Any forecasting extension must be evaluated on later dates excluded
-from training and compared with a simple baseline.

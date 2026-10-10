@@ -24,6 +24,8 @@
 ## Evidence
 - evidence/s3-object-versions.png
 
-## Scope
-This demonstrates retrieval of an earlier S3 object version
-after an overwrite. It does not test whole-application recovery.
+## Conclusion and scope
+
+The test successfully retrieved an earlier S3 object version and verified its original contents. This demonstrates recoverability through S3 versioning.
+
+Restoration of that version as the current object was not tested. This test covers S3 objects only; it does not demonstrate recovery of DynamoDB data or the entire application.

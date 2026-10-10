@@ -1,21 +1,90 @@
+```yaml
 project:
-  group_id: "Gxxx"
-  title: "Campus Room Booking with No-show Prediction"
-  problem_statement: "Manage room bookings and explore no-show prediction using synthetic data."
+  group_id: "INF2006_11"
+  title: "Roomly: Campus Room Booking with Historical Reservation Analytics"
+  problem_statement: >-
+    Provide authenticated campus room booking, shared availability,
+    booking cancellation, attendance recording and administrator room
+    management. Analyse historical reservation patterns to support
+    understanding of room demand and reservation duration.
   cloud_provider: "AWS"
-  repository_commit: ""
+  repository_commit: "" # Enter the final submitted commit hash, if applicable.
 
 team:
   members:
-    - name: "TBD"
-      student_id: "TBD"
-      role: "TBD"
+    - name: "TEO XUE LING, SHARLENE"
+      student_id: "2503489"
+      role: "Member 1 — Frontend development and user interface"
+
+    - name: "SU YING, STANBERLEY "
+      student_id: "2501376"
+      role: "Member 2 — Backend booking logic and data consistency"
+
+    - name: "SHERMAINE CHAN JING XUAN"
+      student_id: "2501469"
+      role: "Member 3 — AWS deployment, integration and cloud evidence"
+
+    - name: "WEI YUCHEN"
+      student_id: "2503041"
+      role: "Member 4 — Historical analytics, data preparation and validation"
 
 architecture:
   diagram: "evidence/architecture.png"
-  service_model: "TBD"
-  deployment_model: "TBD"
-  components: []
+  service_model: >-
+    Serverless backend using AWS Lambda, with managed API,
+    authentication, database, object storage and logging services.
+  deployment_model: >-
+    AWS public-cloud backend in us-east-1, deployed within an AWS
+    Academy lab account. The frontend is served locally on each
+    user's computer and connects to the shared AWS backend.
+  components:
+    - name: "Roomly frontend"
+      technology: "HTML, CSS and JavaScript"
+      source: "src/frontend/"
+      purpose: "Booking interface and Cognito sign-in integration"
+      hosting: "Local HTTP server at http://127.0.0.1:8766/"
+
+    - name: "Amazon Cognito"
+      purpose: "Authenticate application users"
+      app_client: "roomly-web"
+      configuration: "src/infrastructure/cognito-config.md"
+
+    - name: "Amazon API Gateway"
+      api_name: "roomly-api"
+      api_type: "HTTP API"
+      purpose: "Route requests and validate tokens on protected routes"
+      configuration: "src/infrastructure/api-gateway-config.md"
+
+    - name: "Booking Lambda"
+      function_name: "roomly-booking-api"
+      purpose: "Session, booking and administrator operations"
+      source: "src/backend/lambda_handler.py"
+      data_access_source: "src/backend/dynamodbService.py"
+      configuration: "src/infrastructure/lambda_config.md"
+
+    - name: "Analytics Lambda"
+      function_name: "roomly-get-analytics"
+      purpose: "Read historical analytics outputs from S3"
+      source: "src/backend/analytics_lambda.py"
+      configuration: "src/infrastructure/lambda_config.md"
+
+    - name: "Amazon DynamoDB"
+      purpose: "Store rooms, users, bookings and reservation locks"
+      tables:
+        - "Rooms"
+        - "RoomlyUsers"
+        - "RoomlyBookings"
+        - "RoomlyReservations"
+      configuration: "src/infrastructure/dynamodb-schema.md"
+
+    - name: "Amazon S3"
+      bucket_name: "roomly-analytics-2026-11"
+      purpose: "Store historical analytics output files"
+      configuration: "src/infrastructure/s3-config.md"
+
+    - name: "Amazon CloudWatch"
+      purpose: "Record Lambda execution information and API access logs"
+      evidence: "evidence/monitoring.md"
 
 evidence:
   functional_test: "evidence/test-functional.md"
@@ -23,21 +92,93 @@ evidence:
   data_ai_test: "evidence/test-data-ai.md"
   scale_resilience_test: "evidence/test-resilience.md"
   monitoring: "evidence/monitoring.md"
+  deployment: "evidence/deployment.md"
+  analytics_cloud_test: "evidence/test-analytics-cloud.md"
+  backend_test: "evidence/test-backend.md"
+  supporting_artifacts:
+    - "evidence/security-student-no-token-2026-10-09.png"
+    - "evidence/security-admin-2026-10-09.png"
+    - "evidence/security-student-update.png"
+    - "evidence/security-cancel-denied.png"
+    - "evidence/security-booking-still-confirmed.png"
+    - "evidence/security-booking-privacy.png"
+    - "evidence/security-analytics-no-token.png"
+    - "evidence/security-analytics-admin.png"
+    - "evidence/monitoring-session-log.png"
+    - "evidence/monitoring-errors-query.png"
+    - "evidence/lambda-report-2026-09-24.txt"
+    - "evidence/s3-object-versions.png"
+    - "evidence/analytics-website-network.png"
+    - "evidence/analytics.json"
 
 data_ai:
   dataset: "data/README.md"
-  method: "TBD"
-  evaluation: "TBD"
-  reproducible_command: "TBD"
+  cleaned_dataset: "data/reservations_cleaned_newversion.csv"
+  notebook: "analytics/reservation_analysis.ipynb"
+  dependencies: "analytics/requirements.txt"
+  method: >-
+    Descriptive historical reservation analytics: count reservations
+    by room, weekday and start hour; calculate reserved hours and
+    average and median reservation duration.
+  evaluation: >-
+    Validation procedures and observed results are documented in
+    evidence/test-data-ai.md and analytics/README.md. Cloud delivery
+    is documented separately in evidence/test-analytics-cloud.md.
+  reproducible_command: >-
+    cd analytics &&
+    python -m jupyter nbconvert --to notebook --execute
+    reservation_analysis.ipynb
+    --output reservation_analysis.executed.ipynb
+    --ExecutePreprocessor.timeout=600
+  outputs:
+    - "analytics/output/summary_metrics.json"
+    - "analytics/output/reservations_by_room.csv"
+    - "analytics/output/reservations_by_weekday.csv"
+    - "analytics/output/reservations_by_start_hour.csv"
+  limitations: >-
+    Historical analytics are separate from live DynamoDB bookings.
+    The feature does not predict no-shows or future demand.
+    Reservations do not establish actual attendance or occupancy.
+    Utilisation cannot be calculated without available-room-hour data.
 
 security:
   threat_control_map: "evidence/threat-control-map.md"
-  secrets_handling: "TBD"
+  secrets_handling: >-
+    Passwords, AWS access keys, session credentials and authentication
+    tokens must not be committed or included in submission evidence.
+    Cognito handles user passwords. Lambda accesses AWS resources
+    through its execution role. Share test-account credentials
+    privately and redact sensitive values from screenshots and logs.
+  authentication: "Amazon Cognito with API Gateway JWT authorisation"
+  authorisation: >-
+    Backend administrator checks protect room-management operations.
+    Booking cancellation requires organiser or administrator permission.
+  iam_record: "src/infrastructure/iam-access.md"
+  limitation: >-
+    The prototype uses the AWS Academy LabRole. Restricted IAM policy
+    inspection prevents a complete verification of its permission
+    scope; this project does not claim verified least-privilege IAM.
 
 run:
-  prerequisites: []
-  commands: []
+  prerequisites:
+    - "Python 3 installed and available as python, python3 or py"
+    - "Repository downloaded with src/frontend present"
+    - "Internet connectivity and an available AWS backend"
+    - "A valid Cognito test account mapped to a Roomly user"
+    - "Use http://127.0.0.1:8766/ for the configured login callback"
+    - "Run frontend commands from the repository root"
+    - "Analytics reproduction requires dependencies and a Jupyter kernel"
+  commands:
+    - "python -m http.server 8766 --bind 127.0.0.1 --directory src/frontend"
+  platform_commands:
+    macos: "python3 -m http.server 8766 --bind 127.0.0.1 --directory src/frontend"
+    windows: "py -m http.server 8766 --bind 127.0.0.1 --directory src/frontend"
+  website_url: "http://127.0.0.1:8766/"
+  user_guide: "USER_GUIDE.md"
+  infrastructure_entry_point: "src/infrastructure/README.md"
+  analytics_instructions: "analytics/README.md"
 
 declarations:
   ai_use: "AI_USE_DECLARATION.md"
   contributions: "TEAM_CONTRIBUTIONS.md"
+```

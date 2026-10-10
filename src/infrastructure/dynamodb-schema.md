@@ -38,10 +38,13 @@ Sort key: None
 | role | String | Application role, such as student or faculty |
 | is_active | Boolean | Whether the account may use the application |
 | is_admin | Boolean | Whether the user has administrator permissions |
+| auth_issuer | String | Cognito issuer identifying the user pool |
+| auth_sub | String | Unique Cognito subject identifier for the user |
 
-Additional identity-mapping attributes connect the user record
-to the Cognito issuer and subject identifier. Record their exact
-attribute names from the deployed implementation.
+The backend matches the verified token's `iss` and `sub` claims
+to `auth_issuer` and `auth_sub` in RoomlyUsers. This connects the
+Cognito identity to the application's user ID and permissions.
+Passwords are managed by Cognito and are not stored in DynamoDB.
 
 Passwords are managed by Cognito and are not stored in this table.
 Faculty status alone does not grant administrator permission.

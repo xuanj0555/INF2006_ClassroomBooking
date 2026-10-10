@@ -148,4 +148,3 @@ The later access tests confirmed successful authenticated administrator access a
 - This test does not verify cloud booking creation, cancellation or conflict prevention.
 - Student access to the analytics endpoint has not been tested here, so administrator-only access is not established.
 - Lambda request identifiers were not recorded for these analytics tests.
-```

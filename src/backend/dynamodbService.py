@@ -34,9 +34,12 @@ def av(item):
 
 
 class DynamoDBService:
-    def __init__(self, resource=None, clock=None):
+    def __init__(self, resource=None, clock=None, client=None):
         self.db = resource or boto3.resource('dynamodb')
-        self.client = boto3.client('dynamodb',
+        # A client can be injected by repeatable service-level tests. In AWS,
+        # the normal boto3 client is used automatically.
+        self.client = client or boto3.client(
+            'dynamodb',
             region_name=self.db.meta.client.meta.region_name,
             endpoint_url=self.db.meta.client.meta.endpoint_url)
         self.clock = clock or (lambda: datetime.now(SG))
@@ -135,8 +138,12 @@ class DynamoDBService:
 
     def list_users(self, uid):
         self.actor(uid)
+        # Administrator accounts are not valid booking participants. Keep this
+        # rule in the backend as well as in the participant picker so it cannot
+        # be bypassed by sending an admin user_id directly to the API.
         return {'users': sorted([{k: u[k] for k in ('user_id', 'name', 'role')}
-                                for u in self.scan(self.users) if u.get('is_active') is True],
+                                for u in self.scan(self.users)
+                                if u.get('is_active') is True and u.get('is_admin') is not True],
                                key=lambda u: u['name'])}
 
     def availability(self, rid, date):
@@ -216,7 +223,10 @@ class DynamoDBService:
                 raise ApiError(400, 'slot_in_past', 'Choose a future slot.')
             rev = self.revision()  # Read BEFORE scans; conditional guard detects concurrent writers.
             for person in participants:
-                self.actor(person)
+                participant = self.actor(person)
+                if participant.get('is_admin') is True:
+                    raise ApiError(400, 'admin_participant_not_allowed',
+                                   'Administrator accounts cannot be booking participants.')
             room = self.room(rid)
             if len(participants) > int(room['capacity']):
                 raise ApiError(400, 'capacity_exceeded', 'Group exceeds room capacity.')
@@ -241,8 +251,9 @@ class DynamoDBService:
                         'ExpressionAttributeValues': av({':yes': True, ':size': len(participants)})}}]
             for person in participants:
                 actions.append({'ConditionCheck': {'TableName': self.users.name,
-                    'Key': av({'user_id': person}), 'ConditionExpression': 'is_active = :yes',
-                    'ExpressionAttributeValues': av({':yes': True})}})
+                    'Key': av({'user_id': person}),
+                    'ConditionExpression': 'is_active = :yes AND is_admin = :no',
+                    'ExpressionAttributeValues': av({':yes': True, ':no': False})}})
             for resource in ['ROOM#' + rid] + ['USER#' + p for p in participants]:
                 actions.append({'Put': {'TableName': self.reservations.name,
                     'Item': av({'resource_id': resource, 'slot_start': stamp(start), 'booking_id': bid}),

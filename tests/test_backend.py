@@ -131,6 +131,15 @@ class TestCreate(Base):
         self.assertEqual(status, 201)
         self.assertEqual(len(b["participants"]), 2)
 
+    def test_admin_cannot_be_booking_participant(self):
+        status, body = self.book(ALEX, participants=[CASEY])
+        self.assertEqual((status, body["code"]), (400, "admin_participant_not_allowed"))
+        self.assertNotIn(CASEY, [u["user_id"] for u in self.call(ALEX, "GET", "/users")[1]["users"]])
+
+    def test_admin_cannot_create_booking_when_admin_is_organiser(self):
+        status, body = self.book(CASEY)
+        self.assertEqual((status, body["code"]), (400, "admin_participant_not_allowed"))
+
     def test_duplicate_unknown_inactive_participants_rejected(self):
         s, body = self.book(ALEX, participants=[JAMIE, JAMIE])
         self.assertEqual((s, body["code"]), (400, "duplicate_participants"))
@@ -144,7 +153,7 @@ class TestCreate(Base):
         self.assertEqual(self.book(ALEX, participants=[JAMIE, SARAH, MORGAN])[0], 201)
         with self.svc._write() as c:
             c.execute("INSERT INTO users VALUES('U007','S-0007','Extra One','student',1,0,NULL)")
-        status, body = self.book(CASEY, room="R004", start=slot(hour=12),
+        status, body = self.book(ALEX, room="R004", start=slot(hour=12),
                                  participants=[JAMIE, SARAH, MORGAN, "U007"])
         self.assertEqual((status, body["code"]), (400, "capacity_exceeded"))
         self.assertEqual(body["capacity"], 4)
@@ -283,10 +292,10 @@ class TestConcurrency(Base):
         self.assertEqual(self.count("booking_participants"), 2)
 
     def test_many_users_same_slot_exactly_one_wins(self):
-        users = [ALEX, JAMIE, SARAH, MORGAN, CASEY]
+        users = [ALEX, JAMIE, SARAH, MORGAN]
         res = self.race([(lambda u=u: self.book(u, room="R003")) for u in users])
         self.assertEqual(res.count(201), 1)
-        self.assertEqual(res.count(409), 4)
+        self.assertEqual(res.count(409), 3)
 
 
 class TestUniqueIndexBackstop(Base):

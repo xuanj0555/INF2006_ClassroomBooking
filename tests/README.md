@@ -291,13 +291,28 @@ comparison with a simple baseline.
 
 ### Run the Supplied Backend Tests
 
-macOS:
+Local SQLite backend:
 
-`python3 tests/test_backend.py`
+macOS/Linux:
+
+`python3 -m unittest tests.test_backend tests.test_admin -v`
 
 Windows:
 
-`py tests\test_backend.py`
+`py -m unittest tests.test_backend tests.test_admin -v`
+
+DynamoDB service tests (repeatable mocked DynamoDB):
+
+macOS/Linux:
+
+`python3 -m unittest tests.test_dynamodb_service -v`
+
+Windows:
+
+`py -m unittest tests.test_dynamodb_service -v`
+
+The DynamoDB tests use the same `DynamoDBService` code used by the Lambda backend,
+with a small in-memory DynamoDB mock so they do not require AWS credentials.
 
 The supplied tests need to remain aligned with the current
 implementation and project scope.

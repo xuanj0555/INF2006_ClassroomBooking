@@ -19,6 +19,7 @@
 - The browser must not be trusted to choose the organiser.
 - Only active users can create or participate in bookings.
 - Students can have at most two future confirmed bookings as organisers.
+- Administrator accounts are management accounts and cannot be booking participants.
 - Staff/faculty permissions are handled separately from normal student
   booking permissions.
 

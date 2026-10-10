@@ -211,7 +211,7 @@ class BookingService:
         with self._read() as c:
             self._require_active_user(c, user_id)
             rows = c.execute(
-                "SELECT user_id,name,role FROM users WHERE is_active=1 ORDER BY name"
+                "SELECT user_id,name,role FROM users WHERE is_active=1 AND is_admin=0 ORDER BY name"
             ).fetchall()
         return {"users": [dict(r) for r in rows]}
 
@@ -322,6 +322,12 @@ class BookingService:
 
         with self._write() as c:
             organiser = self._require_active_user(c, user_id)
+            # Administrators are management accounts, not booking participants.
+            # Because the organiser is always included as a participant, an admin
+            # account cannot create a booking either.
+            if organiser["is_admin"]:
+                raise ApiError(400, "admin_participant_not_allowed",
+                               "Administrator accounts cannot be booking participants.")
 
             # Idempotency: an identical submission from the same organiser
             # returns the already-created booking instead of creating another one.
@@ -372,6 +378,10 @@ class BookingService:
             if inactive:
                 raise ApiError(400, "inactive_participants", "Some participants have inactive accounts.",
                                user_ids=inactive)
+            admins = [u for u in others if found[u]["is_admin"]]
+            if admins:
+                raise ApiError(400, "admin_participant_not_allowed",
+                               "Administrator accounts cannot be booking participants.", user_ids=admins)
 
             if len(everyone) > room["capacity"]:
                 raise ApiError(400, "capacity_exceeded",

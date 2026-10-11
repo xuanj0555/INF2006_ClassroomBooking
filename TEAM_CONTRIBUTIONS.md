@@ -2,84 +2,128 @@
 
 ## Project
 
-**Project:** Roomly – Campus Room Booking Service  
+**Project:** Roomly: Campus Room Booking with Historical Reservation Analytics  
 **Group:** P2-GROUP-01
 
 ## Contribution Matrix
 
-| Member | Student ID | Role | Artefacts / Commits | Test / Evidence Ownership |
-|---|---|---|---|---|
-| Sharlene | 2503489 | Frontend and User Experience | `src/frontend/*` | Functional UI test |
-| Stanberley | 2501376 | Booking Backend and Validation | `src/backend/*`, architecture diagram | Booking Conflict test |
-| Shermaine | 2501469 | AWS and Cloud Integration | `src/infrastructure/*`, AWS deployment and integration, analytics permission update, startup documentation and project manifest | Cloud integration, security, S3 version retrieval and CloudWatch monitoring evidence |
-| Yuchen | 2503041 | Data and Analytics | `analytics/*` | Data/AI validation test |
+| Member | Student ID | GitHub Username | Role | Artefacts / Contributions | Test / Evidence Ownership |
+|---|---|---|---|---|---|
+| Sharlene | 2503489 | sharlene-04 | Frontend and User Experience | Frontend, administrator interface and dashboard; UI and authentication test records | Functional UI and authentication UI tests |
+| Stanberley | 2501376 | Stanberley | Booking Backend and Validation | Booking services, validation, DynamoDB improvements, architecture diagram and backend test dependencies | Automated backend tests and booking conflict test records |
+| Shermaine | 2501469 | xuanj0555 | AWS and Cloud Integration | AWS deployment and integration, Lambda handlers, Cognito integration, analytics permission update, infrastructure documentation and project manifest | Deployed functional and security tests, S3 version retrieval and CloudWatch monitoring |
+| Yuchen | 2503041 | weiyuchen83 | Data Preparation and Analytics | Dataset cleaning, preparation script, data dictionary, analysis notebook, reproduction script and exported analytics outputs | Dataset preparation and analytics validation records |
+
+## Representative Commits
+
+These commits provide examples of recorded contributions. They are not an exhaustive list or a measure of each member’s total effort.
+
+| Member | Commit | Recorded Work |
+|---|---|---|
+| Sharlene | `be93c2d` | Updated administrator and user interface, including the dashboard |
+| Sharlene | `4322017` | Added `evidence/test-ui.md` and `evidence/test-auth-ui.md` |
+| Stanberley | `5c5050e` | Implemented the booking backend |
+| Stanberley | `92f9f34` | Improved backend and DynamoDB services and their automated tests |
+| Stanberley | `d7e6707` | Updated the architecture diagram and added backend test dependencies |
+| Shermaine | `f015df8` | Integrated the application with AWS services |
+| Shermaine | `adf6196` | Updated analytics authorisation and added analytics security tests |
+| Shermaine | `65c3ee4` | Added CloudWatch session-log and error-search screenshots |
+| Yuchen | `3404575` | Added reservation-demand analysis and exported analytics outputs |
+| Yuchen | `6345580` | Added preparation and reproduction scripts and refined validation records |
+
+Commit authorship identifies who committed a change. Where a member uploaded shared work, the contribution descriptions credit the person who produced it. AWS console configuration, testing and report writing are also supported by documentation and evidence rather than commit counts alone.
 
 ## Individual Contributions
 
 ### Sharlene – Frontend and User Experience
 
-I am responsible for the frontend implementation and user experience of Roomly. My work included the room selection, booking interface, participant selection and analytics-related frontend screens under `src/frontend/`. I coordinated the frontend request and response formats with the backend so that the website could communicate with the booking API.
+I was responsible for Roomly’s frontend implementation and user experience. My work included room selection, the booking interface, participant selection, administrator screens and the analytics dashboard under `src/frontend/`.
 
-My testing responsibility was the functional UI workflow, including checking that users could navigate the booking process and interact with the main booking features.
+I coordinated frontend requests and responses with the backend so that users could interact with the booking system through the website.
+
+I prepared the functional UI and authentication UI test records in `evidence/test-ui.md` and `evidence/test-auth-ui.md`. These records distinguish completed checks from partial or untested behaviour.
 
 ### Stanberley – Booking Backend and Validation
 
-I am responsible for the backend booking logic and validation. My work covered the logical handling of users, rooms, bookings and participants, together with booking validation rules such as participant validation, duplicate participant checking, automatic inclusion of the organiser, room capacity, organiser booking limits, room conflicts and participant conflicts.
+I was responsible for the booking backend and validation rules. My work covered users, rooms, bookings and participants, including participant validation, duplicate participant rejection, automatic organiser inclusion, room capacity, booking limits, room conflicts and participant conflicts.
 
-I also worked on booking creation, cancellation and reservation handling, including releasing room and participant reservations when a booking is cancelled. The backend was designed to use transactional operations to prevent partial booking updates and to handle repeated or conflicting booking requests.
+I implemented booking creation, cancellation and reservation handling, including releasing room and participant reservations when a booking is cancelled. The DynamoDB implementation uses transactional operations to prevent partial updates.
 
-Additional backend work included DynamoDB service integration, reservation records, concurrent booking handling, authorisation checks, check-in validation, room-number generation and automated backend testing. The backend test suite covers successful and rejected booking scenarios, room and participant conflicts, cancellation, capacity, booking limits, check-in timing and other edge cases.
+Additional work included authorisation checks, check-in validation, room-number generation, DynamoDB service improvements and automated backend tests. I also maintained the architecture diagram and backend test setup documentation.
 
-I also prepared and maintained the architecture diagram and was responsible for the Booking Conflict test evidence.
+The backend evidence distinguishes local and mock tests from deployed AWS checks. Cloud conflict and concurrency checks without recorded results remain pending.
 
 ### Shermaine – AWS and Cloud Integration
 
 I was responsible for configuring and integrating Roomly’s AWS backend with the locally served frontend. My work included Amazon API Gateway, AWS Lambda, DynamoDB, Amazon Cognito and the private S3 analytics bucket.
 
-I configured Cognito sign-in and the API Gateway JWT authorizer, and documented the application’s identity mapping and cloud configuration. I integrated the historical analytics outputs produced by Yuchen with S3, the analytics Lambda and the website, and checked that the returned metrics matched the saved outputs.
+I configured Cognito sign-in and the API Gateway JWT authorizer, and documented the application’s identity mapping and cloud configuration. I integrated Yuchen’s historical analytics outputs with S3, the analytics Lambda and the website, and compared the returned metrics with the saved outputs.
 
-I deployed updated Lambda packages and verified administrator room creation with an automatically assigned room ID. With AI assistance, I also updated and deployed the analytics administrator check after testing revealed that students could retrieve analytics.
+I deployed updated Lambda packages and verified administrator room creation with an automatically assigned room ID. With AI assistance, I updated and deployed the analytics administrator check after testing revealed that students could retrieve analytics.
 
-I performed and documented deployed security tests covering unauthenticated access, student access to administrative endpoints, room creation and editing, unauthorised booking cancellation, booking privacy and analytics permissions. After the analytics permission update, I recorded student access returning HTTP 403 and administrator access returning HTTP 200.
+I performed and documented deployed functional and security tests covering booking persistence, cancellation and slot release, unauthenticated access, student access to administrative endpoints, room creation and editing, unauthorised cancellation, booking privacy and analytics permissions. After the analytics permission update, I recorded student access returning HTTP 403 and administrator access returning HTTP 200.
 
-I documented retrieval of an earlier S3 object version and collected CloudWatch evidence for a successful GET /session request and an HTTP 500 log search. These records distinguish the observed results from recovery, concurrency and performance checks that were not completed.
+I documented retrieval of an earlier S3 object version and collected CloudWatch evidence for a successful `GET /session` request and an HTTP 500 log search. The evidence distinguishes version retrieval from restoration and does not claim whole-application recovery or performance under load.
 
 I maintained the infrastructure configuration documents, deployment record, security and monitoring evidence, startup instructions and project manifest, and helped align the report with the implemented system and supporting evidence.
 
-### Yuchen – Data and Analytics
+### Yuchen – Data Preparation and Analytics
 
-I am responsible for the data and analytics component under `analytics/`. This included cleaning and preparing the historical room reservation dataset and producing the reservation-demand analysis.
+I was responsible for preparing the historical reservation dataset and implementing the descriptive analytics.
 
-The analysis examines reservation counts by room, weekday and start hour, reserved hours and reservation duration statistics. The results are intended to help understand historical room usage patterns rather than make automated booking decisions.
+My work included dataset cleaning, timestamp-derived duration calculations, documented exclusions, preservation of room identifiers as text and preparation of `data/reservations_cleaned_newversion.csv`. I added `data/prepare_reservations.py` to reproduce the cleaning process and maintained the dataset documentation and data dictionary.
 
-I am responsible for the Data/AI validation test and for verifying that the calculated analytics results matched expected values from the processed dataset.
+I implemented `analytics/reservation_analysis.ipynb` to calculate reservation counts by room, weekday and start hour, reserved hours and duration statistics. I exported the four CSV and JSON outputs used by the cloud analytics service.
+
+I added `analytics/reproduce.py` to coordinate dataset preparation, notebook execution and output-file checks, together with dependency and setup instructions.
+
+I recorded dataset and analytics validation results in `evidence/test-data-ai.md`, including raw-to-cleaned totals, grouped counts, a manual reserved-hours calculation and independent comparisons with the saved cloud response.
+
+These results describe historical reservation demand. They do not establish attendance, physical occupancy or future demand. Successful completion of the full workflow in a separate environment should only be claimed when its final result is recorded.
 
 ## Team Collaboration
 
-The team divided the project into frontend, backend, cloud integration and data/analytics responsibilities, while coordinating the interfaces between these components.
+The team divided responsibilities between frontend development, booking backend implementation, AWS integration and historical analytics.
 
-The team used shared API expectations and agreed data field names so that the frontend, backend and cloud components could be integrated consistently. Changes affecting shared functionality were tested before being treated as part of the final project.
+Members coordinated API request formats, response fields and data definitions to connect these components. Shared files were sometimes updated by more than one member, so responsibilities overlap where integration required joint work.
 
-Team members also reviewed each other's work where necessary, particularly when integrating the frontend with the AWS backend and when checking that the architecture and evidence matched the implemented system.
+The historical analytics dataset remains separate from the live application’s rooms, users, bookings and attendance records.
 
 ## Individual Reflections
 
 ### Sharlene
 
-Working on the frontend gave me experience in building the user-facing part of a cloud application while also having to coordinate closely with the backend and AWS components. I learnt that frontend development is not only about making the interface look good, but also making sure that the requests, responses and error states match what the backend actually provides.
+Working on the frontend helped me understand that a usable interface depends on coordination with backend and cloud services. I learnt to align requests, responses and user-facing states with the application’s behaviour, and to record which interface checks had actually been completed.
 
 ### Stanberley
 
-Working on the backend helped me understand how much detail is involved in making a booking system reliable. I worked on validation, conflicts, cancellation, reservations and automated testing, and I had to consider situations such as two users trying to book the same slot at the same time. I also learnt that local tests and a deployed AWS system can behave differently, so debugging requires looking at the whole system rather than only my own code.
+Working on the backend showed me how much validation is needed to make a booking system reliable. I had to consider conflicts, cancellation, reservation release, capacity and booking limits. I also learnt to distinguish what local or mock tests demonstrate from what must be verified against the deployed AWS system.
 
 ### Shermaine
 
-Working on AWS and cloud integration gave me practical experience connecting different managed cloud services together. I learnt more about API Gateway, Lambda, DynamoDB and Cognito, as well as the importance of authentication, permissions and deployment configuration. I also learnt that cloud integration requires careful testing because a problem in one service can affect the entire application.
+Working on AWS integration gave me practical experience connecting API Gateway, Lambda, DynamoDB, Cognito and S3. Testing revealed how deployment configuration and backend permissions affect the website. I learnt to record observed results carefully, investigate failures across services and keep the documentation consistent with the deployed implementation.
 
 ### Yuchen
 
-Working on the data and analytics component helped me understand how raw historical data needs to be cleaned and validated before it can be used meaningfully. I learnt how to calculate and verify room usage metrics and how to present the results in a way that supports the project without making unsupported predictions. It also showed me the importance of documenting the data source, preprocessing and limitations of the analysis.
+Working on the data and analytics component helped me understand the importance of reproducible cleaning and independent validation. I learnt to document exclusions, preserve identifiers correctly and distinguish reservation demand from actual occupancy. Adding preparation and reproduction scripts made the workflow easier for another person to follow, while documenting limitations helped avoid unsupported conclusions.
 
-## Team Verification
+## Evidence and Verification Scope
 
-Each member reviewed their assigned artefacts and test/evidence ownership before submission. The team also reviewed the final project structure, evidence paths and contribution records to ensure that the contribution descriptions correspond to the work included in the submission.
+Contribution descriptions are supported by Git history, source files, configuration documents and test records.
+
+Key evidence includes:
+
+- `evidence/test-ui.md`
+- `evidence/test-auth-ui.md`
+- `evidence/test-backend.md`
+- `evidence/test-functional.md`
+- `evidence/test-security.md`
+- `evidence/test-data-ai.md`
+- `evidence/test-analytics-cloud.md`
+- `evidence/test-resilience.md`
+- `evidence/monitoring.md`
+- `evidence/deployment.md`
+
+Pending checks remain identified in the relevant evidence records. Branch-specific changes must be merged into the final submission branch before packaging. Each member should confirm that their contribution description accurately represents their work.
+
+AI assistance is documented separately in `AI_USE_DECLARATION.md`.

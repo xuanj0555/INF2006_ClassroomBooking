@@ -126,6 +126,24 @@ The administrator response included the summary and the `by_room`, `by_weekday` 
 
 These screenshots were captured on 10 October and are separate from the initial 8 October integration evidence.
 
+## 4. Detailed metric cross-layer verification
+
+### Test date
+
+11 October 2026
+
+Three detailed metrics were independently recalculated from `data/reservations_cleaned_newversion.csv` and compared with the saved AWS response in `evidence/analytics.json`.
+
+| Metric | Cleaned CSV | Saved cloud response | Displayed dashboard | Result |
+|---|---:|---:|---:|---|
+| Room 105 reservation count | 2,107 | 2,107 | Not visible in saved evidence | CSV/cloud PASS; display pending |
+| Wednesday reservation count | 9,233 | 9,233 | Not visible in saved evidence | CSV/cloud PASS; display pending |
+| Start hour 14 reservation count | 4,755 | 4,755 | Not visible in saved evidence | CSV/cloud PASS; display pending |
+
+The existing website screenshot verifies HTTP 200 and the displayed summary values, but it does not show the detailed room, weekday or hour results.
+
+During a retest on 11 October 2026, the local website displayed `GET /session failed (500): Internal Server Error`. Because the website could not retrieve the signed-in user session and role, the administrator analytics navigation was unavailable. A new detailed dashboard screenshot must be captured after Members 1 and 3 restore the session endpoint.
+
 ## Issue encountered
 
 Initially, `GET /analytics` had no integration attached. The existing integration selector showed only `roomly-get-rooms`.

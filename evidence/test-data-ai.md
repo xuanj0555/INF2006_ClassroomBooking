@@ -78,15 +78,54 @@ The notebook produces:
 
 The exported files were reloaded and validated successfully.
 
-## Reproduction
+## Raw-to-Clean Processing Validation
 
-1. Install Python and the required dependencies.
-2. Open `analytics/reservation_analysis.ipynb`.
-3. Select the project virtual environment as the notebook kernel.
-4. Run every cell from top to bottom.
-5. Confirm that all validation cells display `PASS`.
-6. Check the generated files inside `analytics/output/`.
+Test date: 11 October 2026
 
-## AI and Forecasting Scope
+The cleaning process was reproduced using `data/prepare_reservations.py`.
 
-No no-show prediction or forecasting model is included in the current analytics scope. The current deliverable provides verified descriptive reservation-demand metrics. Forecasting may be added later only with chronological evaluation and a baseline comparison.
+| Check | Expected | Actual | Result |
+|---|---:|---:|---|
+| Raw records | 51,826 | 51,826 | PASS |
+| Invalid timestamps excluded | 0 | 0 | PASS |
+| Missing room identifiers excluded | 0 | 0 | PASS |
+| Exact duplicate rows excluded | 0 | 0 | PASS |
+| Durations below 5 minutes excluded | 1 | 1 | PASS |
+| Durations above 240 minutes excluded | 506 | 506 | PASS |
+| Total records excluded | 507 | 507 | PASS |
+| Final cleaned records | 51,319 | 51,319 | PASS |
+
+The cleaning script derives each reservation duration from `end_time - start_time`, rounds it to the nearest whole minute and exports the cleaned data to `data/reservations_cleaned_newversion.csv`.
+
+## Independent Metric Validation
+
+Test date: 11 October 2026
+
+The following values were calculated independently by filtering the cleaned CSV outside the analysis notebook:
+
+| Check | Expected | Actual | Result |
+|---|---:|---:|---|
+| Reservations for Room 105 | 2,107 | 2,107 | PASS |
+| Reservations starting on Wednesday | 9,233 | 9,233 | PASS |
+| Reservations starting at hour 14 | 4,755 | 4,755 | PASS |
+
+The saved AWS response in `evidence/analytics.json` was independently checked on 11 October 2026.
+
+| Metric | Cleaned CSV | Saved cloud response | Displayed dashboard | Status |
+|---|---:|---:|---:|---|
+| Room 105 reservation count | 2,107 | 2,107 | Not visible in saved evidence | CSV/cloud PASS; display pending |
+| Wednesday reservation count | 9,233 | 9,233 | Not visible in saved evidence | CSV/cloud PASS; display pending |
+| Start hour 14 reservation count | 4,755 | 4,755 | Not visible in saved evidence | CSV/cloud PASS; display pending |
+
+The existing dashboard screenshot verifies HTTP 200 and the overall summary metrics. It does not display these three detailed values. During a retest on 11 October 2026, `GET /session` returned HTTP 500, preventing the administrator analytics navigation from loading. Detailed dashboard verification therefore remains pending for Members 1 and 3 after the session endpoint is restored.
+
+## Reproduction Test
+
+Test date: 11 October 2026
+
+A separate temporary Python virtual environment was created to test the workflow independently from the normal project environment. The dependencies in `analytics/requirements.txt` were installed successfully.
+
+The complete workflow was then executed using:
+
+```powershell
+& "$env:TEMP\roomly-analytics-test-20261011\Scripts\python.exe" analytics\reproduce.py

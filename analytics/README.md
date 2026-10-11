@@ -2,167 +2,203 @@
 
 This folder contains reproducible descriptive analytics for Roomly's historical reservation dataset.
 
-The historical Kaggle dataset is used only for reservation-demand analytics. It is separate from the application's live booking data.
+The historical Kaggle dataset is used only for reservation-demand analytics. It is separate from the application's live bookings, users and attendance records.
 
 ## Files
 
-- `reservation_analysis.ipynb` — loads, validates and analyses the historical dataset.
-- `requirements.txt` — records the Python dependencies required to reproduce the analysis.
-- `output/reservations_by_room.csv` — reservation count and reserved hours for each room.
-- `output/reservations_by_weekday.csv` — reservation count for each weekday.
-- `output/reservations_by_start_hour.csv` — reservation count for each start hour.
-- `output/summary_metrics.json` — overall dataset and duration metrics.
+- `reservation_analysis.ipynb` loads, validates and analyses the cleaned dataset.
+- `reproduce.py` regenerates the cleaned dataset, executes the notebook and verifies that all expected outputs exist.
+- `requirements.txt` contains the required Python dependencies.
+- `output/reservations_by_room.csv` contains reservation count and reserved hours for each room.
+- `output/reservations_by_weekday.csv` contains reservation count for each weekday.
+- `output/reservations_by_start_hour.csv` contains reservation count for each start hour.
+- `output/summary_metrics.json` contains overall dataset, duration and data-quality metrics.
 
-All paths in this document are relative to the repository root.
+## Input Data
 
-## Data Source
+The raw historical dataset is:
 
-- Dataset: University Library Room Reservations
-- Source: Kaggle
-- URL: https://www.kaggle.com/datasets/aceeedev/university-library-room-reservations
-- Analysed file: `data/reservations_cleaned_newversion.csv`
-- Data dictionary: `data/DATA_DICTIONARY.md`
+```text
+data/reservations.csv
+```
+
+The reproducible cleaning script is:
+
+```text
+data/prepare_reservations.py
+```
+
+The cleaning script generates:
+
+```text
+data/reservations_cleaned_newversion.csv
+```
+
+The analytics notebook reads the generated cleaned file. Dataset provenance, cleaning rules, exclusions and known limitations are documented in:
+
+```text
+data/README.md
+data/DATA_DICTIONARY.md
+```
 
 ## Requirements
 
 - Python 3.12
-- pandas
-- matplotlib
-- Jupyter or the VS Code Jupyter extension
-
-The exact installed package versions are recorded in `analytics/requirements.txt`.
+- pandas 3.0.6
+- matplotlib 3.11.2
+- nbconvert 7.17.1
+- ipykernel 7.4.0
 
 ## Reproduction Instructions
 
-From the repository root, create a virtual environment:
+Run all commands from the repository root.
+
+### Windows PowerShell
+
+Create and activate a virtual environment:
 
 ```powershell
 python -m venv .venv
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+.\.venv\Scripts\Activate.ps1
 ```
 
-Install the required dependencies:
+Install the dependencies:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pip install -r analytics\requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r analytics\requirements.txt
 ```
 
-Then:
+Run the complete analytics workflow with one command:
 
-1. Open `analytics/reservation_analysis.ipynb`.
-2. Select `.venv` as the notebook kernel.
-3. Run every cell from top to bottom.
-4. Confirm that all validation sections display `PASS`.
-5. Check the generated files under `analytics/output/`.
+```powershell
+python analytics\reproduce.py
+```
+
+### macOS or Linux
+
+Create and activate a virtual environment:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+Install the dependencies:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r analytics/requirements.txt
+```
+
+Run the complete analytics workflow with one command:
+
+```bash
+python analytics/reproduce.py
+```
+
+The reproduction command:
+
+1. Runs `data/prepare_reservations.py`.
+2. Regenerates `data/reservations_cleaned_newversion.csv`.
+3. Executes `analytics/reservation_analysis.ipynb`.
+4. Writes the dashboard files consistently to `analytics/output/`.
+5. Checks that all expected CSV and JSON outputs exist.
+
+A successful run ends with:
+
+```text
+PASS: analytics reproduced successfully
+Output location: <repository>/analytics/output
+```
+
+## Verified Dataset Totals
+
+- Raw records: 51,826
+- Excluded records: 507
+- Cleaned records: 51,319
+- Distinct room identifiers: 46
+- Historical start-date range: 6 January 2024 to 31 December 2024
+
+The 507 exclusions consist of:
+
+- One reservation with a timestamp-derived duration below 5 minutes.
+- 506 reservations with timestamp-derived durations above 240 minutes.
+
+## Output Fields
+
+### `reservations_by_room.csv`
+
+| Field | Description |
+|---|---|
+| `room_id` | Historical room identifier stored as text |
+| `reservation_count` | Number of reservations starting in that room |
+| `reserved_hours` | Sum of reservation durations divided by 60 |
+
+### `reservations_by_weekday.csv`
+
+| Field | Description |
+|---|---|
+| `weekday` | Day of the week |
+| `reservation_count` | Number of reservations starting on that weekday |
+
+### `reservations_by_start_hour.csv`
+
+| Field | Description |
+|---|---|
+| `start_hour` | Reservation starting hour from 0 to 23 |
+| `reservation_count` | Number of reservations starting during that hour |
+
+### `summary_metrics.json`
+
+The summary includes:
+
+- Record count
+- Room count
+- Average reservation duration
+- Median reservation duration
+- Total reserved hours
+- Historical coverage start and end
+- Number of detected overlapping cases
+- Number of dates without reservation starts
+- Source timezone status
 
 ## Verified Results
 
-- 51,319 reservation records
-- 46 room identifiers
-- No missing values
-- No duplicate rows
 - Average reservation duration: 95.43 minutes
 - Median reservation duration: 90 minutes
-- Total reserved time: 81,622.72 hours
-- Highest-demand room by count: Room 105 with 2,107 reservations
-- Highest reserved hours: Room 104 with 3,284.5 hours
-- Highest-demand weekday: Wednesday with 9,233 reservations
-- Highest-demand start hour: 14:00 with 4,755 reservations
-- Two overlapping reservation cases
-- Nine dates without reservation starts
+- Total reserved hours: 81,622.72 hours
+- Highest reservation count by room: Room 105 with 2,107 reservations
+- Highest reserved hours by room: Room 104 with 3,284.50 hours
+- Busiest weekday: Wednesday with 9,233 reservations
+- Busiest starting hour: 14:00 with 4,755 reservations
 
-## Dashboard Output Fields
+## Interpretation
 
-### reservations_by_room.csv
+The historical results suggest that demand was concentrated around the middle of the week and during daytime study hours. Wednesday recorded the highest reservation count, while 14:00 was the busiest starting hour.
 
-| Field | Type | Description |
-|---|---|---|
-| `room_id` | Text | Historical room identifier |
-| `reservation_count` | Integer | Number of reservations for the room |
-| `reserved_hours` | Decimal | Total hours reserved for the room |
+Rooms 104, 105 and 106 recorded particularly high reserved-hour totals. If similar demand patterns apply to Roomly's actual campus rooms, these periods and rooms may require closer availability monitoring. Lower-demand periods could also be considered for maintenance or administrative activities.
 
-Room identifiers must be loaded as text.
+These findings describe recorded reservations only. They do not establish actual room occupancy, attendance or unmet demand.
 
-### reservations_by_weekday.csv
+## Known Limitations
 
-| Field | Type | Description |
-|---|---|---|
-| `weekday` | Text | Day of the week |
-| `reservation_count` | Integer | Number of reservations for the weekday |
+- The source timezone is unknown, so no timezone conversion is applied.
+- Reservations do not prove that users attended or occupied a room.
+- The historical dataset does not contain user identities, booking-creation timestamps, cancellation outcomes or unsuccessful booking attempts.
+- Nine dates within the source period have no reservation starts. The dataset does not establish whether these represent closures, zero demand or missing data.
+- Two overlapping reservation cases were retained and documented. They may slightly inflate reserved-hour totals.
+- Historical room identifiers do not necessarily correspond to actual Roomly campus rooms.
+- Results describe the supplied 2024 dataset and should not automatically be treated as current demand.
+- The current analytics deliverable does not include forecasting or no-show prediction.
 
-The dashboard should retain Monday-to-Sunday ordering.
+## Validation Evidence
 
-### reservations_by_start_hour.csv
+Analytics validation and manual checks are recorded in:
 
-| Field | Type | Description |
-|---|---|---|
-| `start_hour` | Integer | Reservation start hour from 0 to 23 |
-| `reservation_count` | Integer | Number of reservations starting during the hour |
+```text
+evidence/test-data-ai.md
+```
 
-### summary_metrics.json
-
-The JSON file contains:
-
-- `record_count`
-- `room_count`
-- `average_duration_minutes`
-- `median_duration_minutes`
-- `total_reserved_hours`
-- `coverage_start`
-- `coverage_end`
-- `overlap_cases`
-- `dates_without_reservation_starts`
-- `source_timezone`
-
-## Suggested Dashboard Charts
-
-| Chart | Source file | Fields |
-|---|---|---|
-| Reservations by room | `reservations_by_room.csv` | `room_id`, `reservation_count` |
-| Reserved hours by room | `reservations_by_room.csv` | `room_id`, `reserved_hours` |
-| Demand by weekday | `reservations_by_weekday.csv` | `weekday`, `reservation_count` |
-| Demand by start hour | `reservations_by_start_hour.csv` | `start_hour`, `reservation_count` |
-| Summary cards | `summary_metrics.json` | Overall metrics |
-
-## Validation
-
-The notebook verifies that:
-
-- Counts grouped by room sum to 51,319.
-- Counts grouped by weekday sum to 51,319.
-- Counts grouped by start hour sum to 51,319.
-- All 46 room identifiers are represented.
-- The exported files can be loaded successfully.
-- The first five reservations total 630 minutes, or 10.5 reserved hours.
-
-Detailed validation evidence is recorded in:
-
-`evidence/test-data-ai.md`
-
-## Data-Quality Findings
-
-Two overlap cases were identified for Room 234:
-
-1. On 29 May 2024, 14:00–15:00 overlaps with 14:15–15:15.
-2. On 5 June 2024, 14:00–15:00 overlaps with 14:15–15:15.
-
-Each case overlaps by 45 minutes. The records were retained and documented rather than deleted.
-
-Nine weekend dates within the covered interval contain no reservation starts. It cannot be confirmed whether these dates represent genuine zero demand, library closures or missing source data.
-
-The source timezone is not specified, and the timestamps contain no timezone offsets. They are treated as timezone-naive source-local times without conversion.
-
-## Limitations
-
-- The dataset contains no user identities.
-- It contains no participant lists or attendance outcomes.
-- It contains no booking-creation timestamps.
-- It contains no cancellation status.
-- Reservation demand does not necessarily represent actual room usage.
-- No no-show prediction model is included in the current scope.
-- Forecasting is not included in the current first deliverable.
-
-## Project Scope
-
-The current analytics component provides verified descriptive reservation-demand metrics for the Roomly dashboard.
-
-Forecasting may be added later only after the descriptive metrics are integrated, using chronological evaluation and a baseline comparison.
+Cloud and dashboard comparisons must record the test date, selected room, weekday and hour, together with expected and actual values.

@@ -108,6 +108,10 @@ evidence:
     - "evidence/lambda-report-2026-09-24.txt"
     - "evidence/s3-object-versions.png"
     - "evidence/analytics-website-network.png"
+    - "evidence/security-student-create.png"
+    - "evidence/security-analytics-student.png"
+    - "evidence/admin-room-created.png"
+    - "evidence/security-analytics-admin-after-update.png"
     - "evidence/analytics.json"
 
 data_ai:
@@ -155,8 +159,11 @@ security:
   iam_record: "src/infrastructure/iam-access.md"
   limitation: >-
     The prototype uses the AWS Academy LabRole. Restricted IAM policy
-    inspection prevents a complete verification of its permission
-    scope; this project does not claim verified least-privilege IAM.
+    inspection prevents complete verification of its permission scope;
+    this project does not claim verified least-privilege IAM.
+    After the analytics permission update, the tested student account
+    received HTTP 403 and the administrator received HTTP 200 with
+    historical analytics data on 11 October 2026.
 
 run:
   prerequisites:

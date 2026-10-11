@@ -127,12 +127,7 @@ data_ai:
     Validation procedures and observed results are documented in
     evidence/test-data-ai.md and analytics/README.md. Cloud delivery
     is documented separately in evidence/test-analytics-cloud.md.
-  reproducible_command: >-
-    cd analytics &&
-    python -m jupyter nbconvert --to notebook --execute
-    reservation_analysis.ipynb
-    --output reservation_analysis.executed.ipynb
-    --ExecutePreprocessor.timeout=600
+  reproducible_command: "python analytics/reproduce.py"
   outputs:
     - "analytics/output/summary_metrics.json"
     - "analytics/output/reservations_by_room.csv"

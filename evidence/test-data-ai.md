@@ -121,11 +121,53 @@ The existing dashboard screenshot verifies HTTP 200 and the overall summary metr
 
 ## Reproduction Test
 
-Test date: 11 October 2026
+Test date: 11 October 2026  
+Tester: Shermaine  
+Platform: macOS
 
-A separate temporary Python virtual environment was created to test the workflow independently from the normal project environment. The dependencies in `analytics/requirements.txt` were installed successfully.
+### Objective
 
-The complete workflow was then executed using:
+Verify that the complete raw-to-output analytics workflow runs successfully in a newly created Python environment.
 
-```powershell
-& "$env:TEMP\roomly-analytics-test-20261011\Scripts\python.exe" analytics\reproduce.py
+### Procedure
+
+1. Created and activated a separate Python virtual environment.
+2. Installed the dependencies from `analytics/requirements.txt`.
+3. Ran `python analytics/reproduce.py` from the repository root.
+4. Saved the execution output to `evidence/analytics-reproduction-2026-10-11.txt`.
+5. Checked the process exit status and completion message.
+
+### Expected Result
+
+The workflow regenerates the cleaned dataset, executes the analysis notebook and confirms that the four expected analytics output files exist. The process exits with status 0.
+
+### Actual Result
+
+Dependency installation completed successfully.
+
+The preparation script reported:
+
+- Raw records: 51,826
+- Invalid timestamps: 0
+- Missing room identifiers: 0
+- Exact duplicate rows: 0
+- Duration below 5 minutes: 1
+- Duration above 240 minutes: 506
+- Total excluded: 507
+- Cleaned records: 51,319
+
+The notebook executed and was saved successfully. The complete workflow exited with status 0 and reported:
+
+`PASS: analytics reproduced successfully`
+
+### Result
+
+PASS.
+
+### Supporting Evidence
+
+[Reproduction execution output](analytics-reproduction-2026-10-11.txt)
+
+### Limitations
+
+This test demonstrates successful reproduction in a separate Python environment on Shermaine’s Mac. It does not establish compatibility with every computer, verify website rendering or test AWS availability. Independent metric validation is documented separately in this record.

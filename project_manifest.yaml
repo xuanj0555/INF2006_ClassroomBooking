@@ -85,6 +85,24 @@ architecture:
       purpose: "Record Lambda execution information and API access logs"
       evidence: "evidence/monitoring.md"
 
+backend:
+  source:
+    - "src/backend/bookingService.py"
+    - "src/backend/dynamodbService.py"
+
+  tests:
+    - "tests/test_backend.py"
+    - "tests/test_dynamodb_service.py"
+    - "tests/fake_dynamodb.py"
+    - "tests/README.md"
+
+  documentation:
+    - "src/booking_rules.md"
+
+  evidence:
+    - "evidence/test-backend.md"
+    - "evidence/architecture.png"
+
 evidence:
   functional_test: "evidence/test-functional.md"
   security_test: "evidence/test-security.md"

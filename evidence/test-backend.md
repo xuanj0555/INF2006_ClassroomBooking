@@ -57,6 +57,8 @@ python -m unittest tests.test_backend tests.test_admin -v
 
 Test date: 11 October 2026
 
+**Status:** Recorded checks passed; outstanding checks are listed below.
+
 Tester: Shermaine
 
 Endpoint: `https://kw67yao8v7.execute-api.us-east-1.amazonaws.com/bookings`

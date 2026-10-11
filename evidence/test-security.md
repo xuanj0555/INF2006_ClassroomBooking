@@ -35,7 +35,7 @@ interface controls.
 | No-token request to analytics before permission update | 10 October 2026 | 401 | 401 | Pass |
 | Administrator requests analytics before permission update | 10 October 2026 | 200 with analytics data | 200 with historical analytics data | Pass |
 | Student requests analytics after permission update | 11 October 2026 | 403 | 403 | Pass |
-| Administrator requests analytics after permission update | Not yet recorded | 200 with analytics data | Not yet recorded | Pending |
+| Administrator requests analytics after permission update | 11 October 2026 | 200 with analytics data | 200 with historical analytics data | Pass |
 
 ## 1. Admin room-list access
 
@@ -449,7 +449,7 @@ it does not establish the outcome for every possible account.
 
 ## 9. Administrator analytics retest after the permission update
 
-Date: Not yet recorded  
+Date: 11 October 2026  
 Account/role: Test Admin — administrator  
 Endpoint and method: `GET /analytics`  
 Request body: None.
@@ -459,11 +459,11 @@ Request body: None.
 Verify that an administrator can still retrieve historical
 analytics after the backend permission update.
 
-### Planned steps
+### Steps
 
 1. Sign in as Test Admin.
 2. Request `/analytics` using the administrator's login token.
-3. Record the date, HTTP status and response.
+3. Record the HTTP status and response.
 4. Save the supporting screenshot.
 
 ### Expected result
@@ -472,20 +472,32 @@ HTTP 200 with historical analytics JSON.
 
 ### Actual result
 
-Not yet recorded.
+HTTP 200 with historical analytics JSON.
 
-Result: Pending.
+The console displayed:
+
+`Admin analytics after update: 200`
+
+Visible summary values included:
+
+- Record count: 51,319
+- Room count: 46
+- Average duration: 95.43 minutes
+- Median duration: 90 minutes
+- Total reserved hours: 81,622.72
+
+Result: Pass.
 
 ### Evidence
 
-No post-update administrator evidence recorded yet.
+- `security-analytics-admin-after-update.png`
 
 ### Interpretation
 
-The administrator HTTP 200 result from 10 October predates the
-permission update and is not counted as this retest. Do not mark
-this test as passed until the new request and result are recorded.
-
+The tested administrator account successfully retrieved historical
+analytics after the permission update. Together with Test 8's
+student HTTP 403 result, this supports role enforcement for the
+tested accounts. It does not independently validate the calculations.
 ## Threats covered
 
 | Threat | Observed protection | Supporting tests |
@@ -501,8 +513,9 @@ this test as passed until the new request and result are recorded.
 
 - Results apply to the tested endpoints, accounts, requests and
   deployed versions.
-- Student analytics access returned 403 after the permission
-  update. Administrator access after that update remains pending.
+- After the permission update, the tested student account received
+  HTTP 403 and the tested administrator account received HTTP 200
+  with historical analytics data on 11 October 2026.
 - The no-token analytics test and the earlier administrator
   analytics test were performed before the permission update.
 - Successful administrator room creation and updating are not
@@ -525,8 +538,8 @@ unauthorised cancellation, preserved the tested booking, and
 excluded Student A's private booking from Student B's booking list.
 
 Administrator analytics access succeeded before the permission
-update. Student analytics access was rejected after the update.
-Administrator access after the update remains pending verification.
-
+update. After the update, the tested student account was rejected
+with HTTP 403 and the administrator successfully retrieved
+historical analytics with HTTP 200.
 These results support the tested authentication, authorisation
 and booking-privacy controls within the documented scope.

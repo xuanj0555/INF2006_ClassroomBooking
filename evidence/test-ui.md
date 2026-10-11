@@ -81,6 +81,17 @@ The stylesheet has breakpoints at 700 px and 480 px. The recorded narrow-layout 
 - Evidence: [Session-expiry prompt](ui-session-expiry.png)
 - Scope: This verifies simulated frontend local-expiry handling. The separate server HTTP 401 response-handling path was not tested.
 
+## Authentication Across Tabs
+
+- Test date: 11 October 2026
+- Tester: Shermaine
+- Account: Test Student A
+- Procedure: Opened Roomly in a second Chrome tab, signed out in the first tab, then changed the room-search date to 13 October 2026 in the second tab.
+- Actual: The second tab initially did not require sign-in. After signing out in the first tab, the second tab remained signed in and loaded 8 room results without a login prompt.
+- Result: Behaviour observed — sign-out was not synchronised across tabs.
+- Limitation: Signing out in one tab did not end access in the other tab during this test.
+- Evidence: [Authentication across tabs](auth-multiple-tabs.png)
+
 ## Conclusion
 
 The matrix contains 26 rows:

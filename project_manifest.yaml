@@ -1,5 +1,5 @@
 project:
-  group_id: "P2-GROUP-01"
+  group_id: "G11"
   title: "Roomly: Campus Room Booking with Historical Reservation Analytics"
   problem_statement: >-
     Provide authenticated campus room booking, shared availability,

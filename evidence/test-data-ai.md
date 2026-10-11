@@ -121,25 +121,42 @@ The existing dashboard screenshot verifies HTTP 200 and the overall summary metr
 
 ## Reproduction Test
 
-Test date: 11 October 2026
+Test date: 11 October 2026  
+Tester: Shermaine  
+Platform: macOS
 
-Objective: Verify that the submitted raw-to-output workflow completes in a newly created Python environment on macOS.
+### Objective
+
+Verify that the complete raw-to-output analytics workflow runs successfully in a newly created Python environment.
 
 ### Procedure
 
-1. Created a separate Python virtual environment at `/tmp/roomly-analytics-check-20261011`.
-2. Activated the environment.
-3. Installed the dependencies from `analytics/requirements.txt`.
-4. Ran `python analytics/reproduce.py` from the repository root.
-5. Saved the execution output and checked the exit status.
+1. Created and activated a separate Python virtual environment.
+2. Installed the dependencies from `analytics/requirements.txt`.
+3. Ran `python analytics/reproduce.py` from the repository root.
+4. Saved the execution output to `evidence/analytics-reproduction-2026-10-11.txt`.
+5. Checked the process exit status and completion message.
 
 ### Expected Result
 
-The preparation script regenerates the cleaned dataset, the notebook executes successfully, and the four expected analytics output files are present. The process exits with status 0.
+The workflow regenerates the cleaned dataset, executes the analysis notebook and confirms that the four expected analytics output files exist. The process exits with status 0.
 
 ### Actual Result
 
-Dependency installation completed successfully. The reproduction command exited with status 0 and reported:
+Dependency installation completed successfully.
+
+The preparation script reported:
+
+- Raw records: 51,826
+- Invalid timestamps: 0
+- Missing room identifiers: 0
+- Exact duplicate rows: 0
+- Duration below 5 minutes: 1
+- Duration above 240 minutes: 506
+- Total excluded: 507
+- Cleaned records: 51,319
+
+The notebook executed and was saved successfully. The complete workflow exited with status 0 and reported:
 
 `PASS: analytics reproduced successfully`
 
@@ -147,10 +164,10 @@ Dependency installation completed successfully. The reproduction command exited 
 
 PASS.
 
-### Evidence
+### Supporting Evidence
 
 [Reproduction execution output](analytics-reproduction-2026-10-11.txt)
 
-### Scope and Limitations
+### Limitations
 
-This test verifies completion of the submitted analytics workflow in a separate Python environment on the tester’s Mac. It does not verify website rendering, AWS availability or operation on every computer. Metric validation is recorded separately above.
+This test demonstrates successful reproduction in a separate Python environment on Shermaine’s Mac. It does not establish compatibility with every computer, verify website rendering or test AWS availability. Independent metric validation is documented separately in this record.

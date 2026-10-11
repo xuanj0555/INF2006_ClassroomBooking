@@ -67,6 +67,8 @@ I documented retrieval of an earlier S3 object version and collected CloudWatch 
 
 I maintained the infrastructure configuration documents, deployment record, security and monitoring evidence, startup instructions and project manifest, and helped align the report with the implemented system and supporting evidence.
 
+On 11 October 2026, I completed the full analytics reproduction test in a newly created Python environment on macOS. The workflow regenerated the cleaned dataset, executed the notebook and checked the expected output files, finishing with exit status 0. I also verified that the Kaggle source page lists the dataset licence as MIT and collected supporting screenshot evidence.
+
 ### Yuchen – Data Preparation and Analytics
 
 I was responsible for preparing the historical reservation dataset and implementing the descriptive analytics.
@@ -79,7 +81,7 @@ I added `analytics/reproduce.py` to coordinate dataset preparation, notebook exe
 
 I recorded dataset and analytics validation results in `evidence/test-data-ai.md`, including raw-to-cleaned totals, grouped counts, a manual reserved-hours calculation and independent comparisons with the saved cloud response.
 
-These results describe historical reservation demand. They do not establish attendance, physical occupancy or future demand. Successful completion of the full workflow in a separate environment should only be claimed when its final result is recorded.
+These results describe historical reservation demand. They do not establish attendance, physical occupancy or future demand. Shermaine subsequently verified successful completion of the full workflow in a separate Python environment on 11 October 2026. The execution output is saved in evidence/analytics-reproduction-2026-10-11.txt.
 
 ## Team Collaboration
 

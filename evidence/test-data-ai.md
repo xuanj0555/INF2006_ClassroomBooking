@@ -113,11 +113,17 @@ The saved AWS response in `evidence/analytics.json` was independently checked on
 
 | Metric | Cleaned CSV | Saved cloud response | Displayed dashboard | Status |
 |---|---:|---:|---:|---|
-| Room 105 reservation count | 2,107 | 2,107 | Not visible in saved evidence | CSV/cloud PASS; display pending |
-| Wednesday reservation count | 9,233 | 9,233 | Not visible in saved evidence | CSV/cloud PASS; display pending |
-| Start hour 14 reservation count | 4,755 | 4,755 | Not visible in saved evidence | CSV/cloud PASS; display pending |
+| Room 105 reservation count | 2,107 | 2,107 | 2,107 | PASS |
+| Wednesday reservation count | 9,233 | 9,233 | 9,233 | PASS |
+| Start hour 14 reservation count | 4,755 | 4,755 | 4,755 | PASS |
 
-The existing dashboard screenshot verifies HTTP 200 and the overall summary metrics. It does not display these three detailed values. During a retest on 11 October 2026, `GET /session` returned HTTP 500, preventing the administrator analytics navigation from loading. Detailed dashboard verification therefore remains pending for Members 1 and 3 after the session endpoint is restored.
+An earlier retest on 11 October 2026 encountered `GET /session` HTTP 500 and could not open the administrator analytics navigation. A subsequent dashboard retest on the same date displayed all three detailed values successfully. These later screenshots establish the displayed values for that retest; they do not explain the earlier failure or establish continuous availability.
+
+Supporting dashboard screenshots:
+
+- [Room 105: 2,107 reservations](analytics-dashboard-room105.png)
+- [Wednesday: 9,233 reservations](analytics-dashboard-wednesday.png)
+- [14:00: 4,755 reservations](analytics-dashboard-hour14.png)
 
 ## Reproduction Test
 

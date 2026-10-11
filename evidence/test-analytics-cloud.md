@@ -8,6 +8,7 @@ Verify that the AWS analytics endpoint returns Member 4’s historical reservati
 
 - Initial cloud and website integration: 8 October 2026
 - Authenticated endpoint access verification: 10 October 2026
+- Post-permission-update access and detailed dashboard retests: 11 October 2026
 
 ## AWS configuration
 
@@ -136,13 +137,17 @@ Three detailed metrics were independently recalculated from `data/reservations_c
 
 | Metric | Cleaned CSV | Saved cloud response | Displayed dashboard | Result |
 |---|---:|---:|---:|---|
-| Room 105 reservation count | 2,107 | 2,107 | Not visible in saved evidence | CSV/cloud PASS; display pending |
-| Wednesday reservation count | 9,233 | 9,233 | Not visible in saved evidence | CSV/cloud PASS; display pending |
-| Start hour 14 reservation count | 4,755 | 4,755 | Not visible in saved evidence | CSV/cloud PASS; display pending |
+| Room 105 reservation count | 2,107 | 2,107 | 2,107 | PASS |
+| Wednesday reservation count | 9,233 | 9,233 | 9,233 | PASS |
+| Start hour 14 reservation count | 4,755 | 4,755 | 4,755 | PASS |
 
-The existing website screenshot verifies HTTP 200 and the displayed summary values, but it does not show the detailed room, weekday or hour results.
+An earlier retest on 11 October 2026 encountered `GET /session` HTTP 500 and could not open the administrator analytics navigation. A subsequent dashboard retest on the same date displayed all three detailed values successfully. These later screenshots establish the displayed values for that retest; they do not explain the earlier failure or establish continuous availability.
 
-During a retest on 11 October 2026, the local website displayed `GET /session failed (500): Internal Server Error`. Because the website could not retrieve the signed-in user session and role, the administrator analytics navigation was unavailable. A new detailed dashboard screenshot must be captured after Members 1 and 3 restore the session endpoint.
+Supporting dashboard screenshots:
+
+- [Room 105: 2,107 reservations](analytics-dashboard-room105.png)
+- [Wednesday: 9,233 reservations](analytics-dashboard-wednesday.png)
+- [14:00: 4,755 reservations](analytics-dashboard-hour14.png)
 
 ## Issue encountered
 
@@ -156,7 +161,7 @@ Created and attached an integration for `roomly-get-analytics`. The endpoint sub
 
 The recorded comparisons show that the cloud endpoint returned values matching the saved historical analytics outputs. The website integration test showed a successful request and matching displayed summary metrics.
 
-The later access tests confirmed successful authenticated administrator access and rejection of a request without a token.
+The later access tests confirmed successful authenticated administrator access and rejection of a request without a token. After the permission update on 11 October 2026, the tested student received HTTP 403 and the administrator received HTTP 200 with historical analytics JSON. See [test-security.md](test-security.md), [student rejection](security-analytics-student.png) and [administrator retest](security-analytics-admin-after-update.png). The subsequent dashboard retest also displayed the three detailed metrics matching the cleaned CSV and saved cloud response.
 
 ## Limitations
 
@@ -164,5 +169,5 @@ The later access tests confirmed successful authenticated administrator access a
 - Reservations do not prove attendance or actual occupancy.
 - Matching cloud outputs demonstrates consistency with the saved analysis; it does not independently establish the correctness of every calculation.
 - This test does not verify cloud booking creation, cancellation or conflict prevention.
-- Student access to the analytics endpoint has not been tested here, so administrator-only access is not established.
+- The recorded access checks cover the tested accounts and requests; they do not establish protection of every endpoint or every identity configuration.
 - Lambda request identifiers were not recorded for these analytics tests.

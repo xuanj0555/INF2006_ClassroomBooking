@@ -114,6 +114,17 @@ evidence:
     - "evidence/security-analytics-admin-after-update.png"
     - "evidence/analytics.json"
 
+    - "evidence/cloud-concurrent-identical-requests.png"
+    - "evidence/cloud-concurrent-single-booking.png"
+    - "evidence/studentAbooking.png"
+    - "evidence/cloud-participant-conflict.png"
+    - "evidence/cloud-room-conflict.png"
+    - "evidence/analytics-dashboard-room105.png"
+    - "evidence/analytics-dashboard-wednesday.png"
+    - "evidence/analytics-dashboard-hour14.png"
+    - "evidence/analytics-reproduction-2026-10-11.txt"
+    - "evidence/dataset-license.png"
+
 data_ai:
   dataset: "data/README.md"
   cleaned_dataset: "data/reservations_cleaned_newversion.csv"

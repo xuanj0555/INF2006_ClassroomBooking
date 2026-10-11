@@ -3,7 +3,7 @@
 ## Project
 
 **Project:** Roomly: Campus Room Booking with Historical Reservation Analytics  
-**Group:** P2-GROUP-01
+**Group:** GROUP-G11
 
 ## Contribution Matrix
 

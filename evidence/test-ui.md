@@ -54,7 +54,7 @@ Accounts: Student A, Student B, Student C, Admin
 | E2 | Empty bookings | "Your next session starts here" message | An account with no bookings showed "Your next session starts here" in My bookings | Pass |
 | E3 | Empty room results | Choose Group size 8 and record what appears | With Group size set to 8, Find a room showed "Choose your space" and "0 rooms". No message explained that no rooms fit the group size or suggested trying a smaller group | Partial Pass |
 | E4 | Simulated local session expiry | The next request displays the sign-in dialog and "Please sign in to continue." | On 11 October 2026, Shermaine set Student A’s stored login expiry to a past time, then changed the room-search date to trigger a new request. The sign-in dialog appeared with "Please sign in to continue." See [screenshot](ui-session-expiry.png). The separate server HTTP 401 handling path was not tested | Pass — local expiry only |
-| E5 | Analytics failure | "Could not load analytics: ..." with source label "AWS analytics unavailable" | Not tested successfully. Setting the browser Offline made Chrome show its own "no internet" page when the page was reloaded, so Roomly’s analytics message could not be observed. No completed analytics request-blocking result has been recorded | Not tested |
+| E5 | Analytics failure | "Could not load analytics: ..." with source label "AWS analytics unavailable" | On 11 October 2026, Shermaine blocked the analytics request in Chrome DevTools while signed in as Test Admin, then opened Reservation analytics. Roomly displayed "AWS analytics unavailable" and "Could not load analytics: Failed to fetch". The blocking panel showed 1 affected request. See [screenshot](ui-analytics-failure.png). Recovery after removing the block has not been recorded | Pass — simulated blocked request |
 
 ## F. Layout (desktop about 1440 px, narrow at 480 px)
 
@@ -96,10 +96,10 @@ The stylesheet has breakpoints at 700 px and 480 px. The recorded narrow-layout 
 
 The matrix contains 26 rows:
 
-- Passed or satisfactory observations: 23 rows, including E4 for simulated local expiry only.
+- Passed or satisfactory observations: 24 rows, including E4 for simulated local expiry only and E5 for a simulated blocked analytics request.
 - Partial Pass: E1 and E3.
-- Not tested: E5.
+- No matrix rows remain wholly untested; the untested paths and limitations below still apply.
 
-Find a room shows no loading message, and an empty room result shows only "0 rooms" without an explanation. The server HTTP 401 expiry/rejection message and the analytics-failure message remain untested.
+Find a room shows no loading message, and an empty room result shows only "0 rooms" without an explanation. The server HTTP 401 expiry/rejection message remains untested. The analytics-failure message was observed after blocking its request in Chrome DevTools; this does not demonstrate an actual AWS outage. Recovery after removing the block has not been recorded. Sign-out was not synchronised across tabs during the additional authentication test.
 
-The original interface and layout checks were recorded in Google Chrome 155 on Windows 11, with the narrow layout checked at 480 px. The additional simulated local-expiry test was completed in Chrome on macOS on 11 October 2026. The sign-in dialog was observed in that additional test, but its narrow-layout appearance was not separately checked.
+The original interface and layout checks were recorded in Google Chrome 155 on Windows 11, with the narrow layout checked at 480 px. The additional simulated local-expiry, analytics request-blocking and multiple-tab authentication checks were completed in Chrome on macOS on 11 October 2026. The narrow-layout appearance of the additional login and analytics error messages was not separately checked.

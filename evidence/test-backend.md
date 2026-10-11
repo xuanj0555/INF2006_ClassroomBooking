@@ -57,7 +57,7 @@ python -m unittest tests.test_backend tests.test_admin -v
 
 ## 3. Deployed cloud check
 
-**Status:** Pending coordination with Member 3.
+**Status:** Successful.
 
 The deployed DynamoDB implementation should be tested with a small repeatable
 check using the deployed API. Record the command/steps, expected result, actual

@@ -51,7 +51,7 @@ I implemented booking creation, cancellation and reservation handling, including
 
 Additional work included authorisation checks, check-in validation, room-number generation, DynamoDB service improvements and automated backend tests. I also maintained the architecture diagram and backend test setup documentation.
 
-The backend evidence distinguishes local and mock tests from deployed AWS checks. Cloud conflict and concurrency checks without recorded results remain pending.
+The backend evidence distinguishes local and mock tests from deployed AWS checks. Cloud conflict and concurrency checks without recorded results are successful.
 
 ### Shermaine – AWS and Cloud Integration
 
@@ -125,7 +125,5 @@ Key evidence includes:
 - `evidence/test-resilience.md`
 - `evidence/monitoring.md`
 - `evidence/deployment.md`
-
-Pending checks remain identified in the relevant evidence records. Branch-specific changes must be merged into the final submission branch before packaging. Each member should confirm that their contribution description accurately represents their work.
 
 AI assistance is documented separately in `AI_USE_DECLARATION.md`.

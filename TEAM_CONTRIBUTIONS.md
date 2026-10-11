@@ -11,7 +11,7 @@
 |---|---|---|---|---|
 | Sharlene | 2503489 | Frontend and User Experience | `src/frontend/*` | Functional UI test |
 | Stanberley | 2501376 | Booking Backend and Validation | `src/backend/*`, architecture diagram | Booking Conflict test |
-| Shermaine | 2501469 | AWS and Cloud Integration | `src/infrastructure/*`, Rooms table, get-rooms Lambda, API Gateway | Cloud / Security test |
+| Shermaine | 2501469 | AWS and Cloud Integration | `src/infrastructure/*`, AWS deployment and integration, analytics permission update, startup documentation and project manifest | Cloud integration, security, S3 version retrieval and CloudWatch monitoring evidence |
 | Yuchen | 2503041 | Data and Analytics | `analytics/*` | Data/AI validation test |
 
 ## Individual Contributions
@@ -34,11 +34,17 @@ I also prepared and maintained the architecture diagram and was responsible for 
 
 ### Shermaine – AWS and Cloud Integration
 
-I am responsible for the AWS and cloud integration work. This included the AWS infrastructure configuration, Rooms table, room-list Lambda function and API Gateway integration.
+I was responsible for configuring and integrating Roomly’s AWS backend with the locally served frontend. My work included Amazon API Gateway, AWS Lambda, DynamoDB, Amazon Cognito and the private S3 analytics bucket.
 
-I also worked on cloud authentication and integration with Amazon Cognito, together with the configuration required for the frontend and backend to communicate with the deployed AWS services.
+I configured Cognito sign-in and the API Gateway JWT authorizer, and documented the application’s identity mapping and cloud configuration. I integrated the historical analytics outputs produced by Yuchen with S3, the analytics Lambda and the website, and checked that the returned metrics matched the saved outputs.
 
-My testing responsibility was the Cloud / Security test, including checking cloud endpoint behaviour, authentication and relevant access controls.
+I deployed updated Lambda packages and verified administrator room creation with an automatically assigned room ID. With AI assistance, I also updated and deployed the analytics administrator check after testing revealed that students could retrieve analytics.
+
+I performed and documented deployed security tests covering unauthenticated access, student access to administrative endpoints, room creation and editing, unauthorised booking cancellation, booking privacy and analytics permissions. After the analytics permission update, I recorded student access returning HTTP 403 and administrator access returning HTTP 200.
+
+I documented retrieval of an earlier S3 object version and collected CloudWatch evidence for a successful GET /session request and an HTTP 500 log search. These records distinguish the observed results from recovery, concurrency and performance checks that were not completed.
+
+I maintained the infrastructure configuration documents, deployment record, security and monitoring evidence, startup instructions and project manifest, and helped align the report with the implemented system and supporting evidence.
 
 ### Yuchen – Data and Analytics
 

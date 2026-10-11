@@ -112,6 +112,7 @@ evidence:
   deployment: "evidence/deployment.md"
   analytics_cloud_test: "evidence/test-analytics-cloud.md"
   backend_test: "evidence/test-backend.md"
+  ui_test: "evidence/test-ui.md"
   supporting_artifacts:
     - "evidence/security-student-no-token-2026-10-09.png"
     - "evidence/security-admin-2026-10-09.png"
@@ -142,6 +143,9 @@ evidence:
     - "evidence/analytics-dashboard-hour14.png"
     - "evidence/analytics-reproduction-2026-10-11.txt"
     - "evidence/dataset-license.png"
+    - "evidence/ui-session-expiry.png"
+    - "evidence/ui-analytics-failure.png"
+    - "evidence/auth-multiple-tabs.png"
 
 data_ai:
   dataset: "data/README.md"

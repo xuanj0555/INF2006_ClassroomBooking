@@ -24,7 +24,7 @@ My testing responsibility was the functional UI workflow, including checking tha
 
 ### Stanberley – Booking Backend and Validation
 
-I am responsible for the backend booking logic and validation. His work covered the logical handling of users, rooms, bookings and participants, together with booking validation rules such as participant validation, duplicate participant checking, automatic inclusion of the organiser, room capacity, organiser booking limits, room conflicts and participant conflicts.
+I am responsible for the backend booking logic and validation. My work covered the logical handling of users, rooms, bookings and participants, together with booking validation rules such as participant validation, duplicate participant checking, automatic inclusion of the organiser, room capacity, organiser booking limits, room conflicts and participant conflicts.
 
 I also worked on booking creation, cancellation and reservation handling, including releasing room and participant reservations when a booking is cancelled. The backend was designed to use transactional operations to prevent partial booking updates and to handle repeated or conflicting booking requests.
 

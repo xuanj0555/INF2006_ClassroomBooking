@@ -1,0 +1,20 @@
+Raw rows: 51,826
+Invalid timestamps: 0
+Missing room identifiers: 0
+Exact duplicate rows: 0
+Duration below 5 minutes: 1
+Duration above 240 minutes: 506
+Total excluded: 507
+Cleaned rows: 51,319
+PASS: cleaned dataset written to /Users/shermaine/Documents/GitHub/INF2006_ClassroomBooking/data/reservations_cleaned_newversion.csv
+[NbConvertApp] Converting notebook /Users/shermaine/Documents/GitHub/INF2006_ClassroomBooking/analytics/reservation_analysis.ipynb to notebook
+[IPKernelApp] WARNING | Kernel is running over TCP without encryption. All communication (including code and outputs) is sent in plain text and is susceptible to eavesdropping. Use IPC transport or launch with kernel manager-provisioned CurveZMQ keys to enable transport encryption.
+[NbConvertApp] Writing 244930 bytes to /Users/shermaine/Documents/GitHub/INF2006_ClassroomBooking/analytics/reservation_analysis.ipynb
+Starting Roomly analytics reproduction
+
+Running: /private/tmp/roomly-analytics-check-20261011/bin/python /Users/shermaine/Documents/GitHub/INF2006_ClassroomBooking/data/prepare_reservations.py
+
+Running: /private/tmp/roomly-analytics-check-20261011/bin/python -m jupyter nbconvert --to notebook --execute /Users/shermaine/Documents/GitHub/INF2006_ClassroomBooking/analytics/reservation_analysis.ipynb --inplace --ExecutePreprocessor.timeout=600
+
+PASS: analytics reproduced successfully
+Output location: /Users/shermaine/Documents/GitHub/INF2006_ClassroomBooking/analytics/output

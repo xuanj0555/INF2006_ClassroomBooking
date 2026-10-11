@@ -1,35 +1,59 @@
-# Combined Roomly project
+# Start Roomly
 
-## Run on your Mac
-1. Extract roomly-combined.zip to a NEW folder. Keep your original project as a backup.
-2. Open Terminal, type `cd ` (including the space), drag the extracted `roomly-combined` folder into Terminal, and press Enter.
-3. Run:
+## Requirements
 
-```sh
-python3 src/backend/server.py
-```
+- Python 3 installed.
+- The project downloaded and extracted.
+- Internet access and an available AWS backend.
+- An assigned Cognito test account mapped to an active Roomly user.
 
-4. Keep Terminal open. Visit http://127.0.0.1:8765/ in your browser.
-5. Select Alex Tan for a student or Casey Ng for the administrator (the account menu shows the actual seeded names).
+## Start the website
 
-Use this Python application server, not `python3 -m http.server`: the website needs its /api routes.
-If port 8765 is already occupied, stop the old server with Control+C in its Terminal before starting this one.
-A fresh `roomly.sqlite3` is created automatically. The first run imports the historical CSV into a separate analytics table.
+1. Open a terminal in the project root.
+2. Run the command for your operating system.
 
-## Check the combined workflow
-- Sign in as a student, select tomorrow and a room/time, add another participant, and confirm.
-- Switch to that participant: their My bookings should contain the shared booking.
-- Try a conflicting reservation: the server must reject it.
-- Switch to the organiser and cancel the booking.
-- Switch to the administrator: edit/add a room, then view Reservation analytics and Demand patterns.
-- Reload and confirm room changes persist.
+Mac:
 
-## Automated checks
-```sh
-python3 -m unittest discover -s tests -v
-```
-51 tests passed during combination. JavaScript passed Node syntax checking. The local server could not be started in the assistant sandbox because opening a listening socket was blocked; browser testing remains to be done on your Mac.
+    python3 -m http.server 8766 --bind 127.0.0.1 --directory src/frontend
 
-## What this package is
-This combines the local main booking backend (including participants, transactions and conflict checks) with the frontend branch's admin screens, room editing and historical analytics. It uses local SQLite and demo account selection. It does NOT complete AWS deployment or real authentication. Historical demand counts are not a trained ML forecast.
-See MERGE_NOTES.md for exact sources and GitHub merge guidance.
+Windows:
+
+    py -m http.server 8766 --bind 127.0.0.1 --directory src/frontend
+
+3. Open http://127.0.0.1:8766/
+4. Sign in using your assigned Cognito test account.
+5. Keep the terminal open while using Roomly.
+
+Use this exact address because it matches the configured Cognito
+callback and sign-out URL.
+
+To stop the frontend, press Control+C in the terminal.
+
+## How this version works
+
+The local server serves the frontend files. Application requests
+go to API Gateway and the AWS Lambda backend. DynamoDB stores
+shared users, rooms, bookings and reservation records.
+
+Historical analytics are returned by a separate Lambda reading
+prepared output files from a private S3 bucket.
+
+Do not use the older SQLite server or demo-account selection
+instructions to start the current Cognito/AWS website.
+
+## Troubleshooting
+
+If Python is unavailable, install Python 3 and reopen the terminal.
+
+If port 8766 is occupied, stop the existing server using that port
+before starting another instance.
+
+If the page opens but requests fail, confirm internet access,
+sign in again, and check the AWS deployment configuration.
+The frontend server alone does not provide the AWS backend.
+
+## Further instructions
+
+- [User guide](USER_GUIDE.md)
+- [Infrastructure setup](src/infrastructure/README.md)
+- [Deployment record](evidence/deployment.md)

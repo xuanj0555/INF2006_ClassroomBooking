@@ -123,9 +123,34 @@ The existing dashboard screenshot verifies HTTP 200 and the overall summary metr
 
 Test date: 11 October 2026
 
-A separate temporary Python virtual environment was created to test the workflow independently from the normal project environment. The dependencies in `analytics/requirements.txt` were installed successfully.
+Objective: Verify that the submitted raw-to-output workflow completes in a newly created Python environment on macOS.
 
-The complete workflow was then executed using:
+### Procedure
 
-```powershell
-& "$env:TEMP\roomly-analytics-test-20261011\Scripts\python.exe" analytics\reproduce.py
+1. Created a separate Python virtual environment at `/tmp/roomly-analytics-check-20261011`.
+2. Activated the environment.
+3. Installed the dependencies from `analytics/requirements.txt`.
+4. Ran `python analytics/reproduce.py` from the repository root.
+5. Saved the execution output and checked the exit status.
+
+### Expected Result
+
+The preparation script regenerates the cleaned dataset, the notebook executes successfully, and the four expected analytics output files are present. The process exits with status 0.
+
+### Actual Result
+
+Dependency installation completed successfully. The reproduction command exited with status 0 and reported:
+
+`PASS: analytics reproduced successfully`
+
+### Result
+
+PASS.
+
+### Evidence
+
+[Reproduction execution output](analytics-reproduction-2026-10-11.txt)
+
+### Scope and Limitations
+
+This test verifies completion of the submitted analytics workflow in a separate Python environment on the tester’s Mac. It does not verify website rendering, AWS availability or operation on every computer. Metric validation is recorded separately above.
